@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+ 
+body {
+  font: 10px sans-serif;
+}
+ 
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+ 
+.point {
+  fill: steelblue;
+  stroke: #000;
+}
+
+.cov_line {
+  fill: none;
+  stroke: black;
+  stroke-width: 1;
+}
+
+.ss_line {
+  fill: none;
+  stroke: url(#energy-gradient);
+  stroke-width: 1;
+}
+ 
+</style>
+<body>
+<script src="./d3/d3.js"></script>
+<script>
+
+ 
+var snake_ids = [ "CAS02", "SII_A" ];
+var segments_some = [ 
+[ "05-12", "05-12_S_cladeE_v1"],
+[ "05-12", "05-12_L_cladeA_v1"],
+[ "97-45", "97-45_L_cladeR_v1"],
+[ "07-02", "07-02_L_cladeRrFR_v1"],
+[ "SII_A", "SII_A_L_cladeK_v1"],
+[ "SII_A", "SII_A_L_cladeXrKX_v1"]];
+
+var segments = [ 
+[ "05-12", "05-12_L_cladeA_v1"],
+[ "05-12", "05-12_L_cladeC_v1"],
+[ "05-12", "05-12_L_cladeF_v1"],
+[ "05-12", "05-12_L_cladeG_v1"],
+[ "05-12", "05-12_L_cladeH_v1"],
+[ "05-12", "05-12_L_cladeJ_v1"],
+[ "05-12", "05-12_L_cladeW_v1"],
+[ "05-12", "05-12_S_cladeE_v1"],
+[ "07-01", "07-01_L_cladeF_v1"],
+[ "07-01", "07-01_S_cladeA_v1"],
+[ "07-02", "07-02_L_cladeA_v1"],
+[ "07-02", "07-02_L_cladeF_v1"],
+[ "07-02", "07-02_L_cladeG_v1"],
+[ "07-02", "07-02_L_cladeJ_v1"],
+[ "07-02", "07-02_L_cladeK_v1"],
+[ "07-02", "07-02_L_cladeRrFR_v1"],
+[ "07-02", "07-02_L_cladeY_v1"],
+[ "07-02", "07-02_S_cladeE_v1"],
+[ "07-03", "07-03_L_cladeM_v1"],
+[ "07-03", "07-03_L_cladeXrDX_v1"],
+[ "07-03", "07-03_L_cladeY_v1"],
+[ "07-03", "07-03_S_cladeE_v1"],
+[ "07-04", "07-04_L_cladeC_v1"],
+[ "07-04", "07-04_S_cladeE_v1"],
+[ "07-05", "07-05_L_cladeA_v1"],
+[ "07-05", "07-05_L_cladeF_v1"],
+[ "07-05", "07-05_L_cladeJ_v1"],
+[ "07-05", "07-05_L_cladeK_v1"],
+[ "07-05", "07-05_S_cladeE_v1"],
+[ "07-06", "07-06_L_cladeC_v1"],
+[ "07-06", "07-06_S_cladeE_v1"],
+[ "07-07", "07-07_L_cladeF_v1"],
+[ "07-07", "07-07_L_cladeJ_v1"],
+[ "07-07", "07-07_L_cladeK_v1"],
+[ "07-07", "07-07_L_cladeRrFR_v1"],
+[ "07-07", "07-07_L_cladeY_v1"],
+[ "07-07", "07-07_S_cladeA_v1"],
+[ "07-07", "07-07_S_cladeE_v1"],
+[ "07-09", "07-09_L_cladeA_v1"],
+[ "07-09", "07-09_L_cladeF_v1"],
+[ "07-09", "07-09_L_cladeG_v1"],
+[ "07-09", "07-09_L_cladeJ_v1"],
+[ "07-09", "07-09_L_cladeK_v1"],
+[ "07-09", "07-09_L_cladeRrFR_v1"],
+[ "07-09", "07-09_L_cladeY_v1"],
+[ "07-09", "07-09_S_cladeE_v1"],
+[ "07-10", "07-10_L_cladeC_v1"],
+[ "07-10", "07-10_L_cladeF_v1"],
+[ "07-10", "07-10_S_cladeE_v1"],
+[ "08-122", "08-122_L_cladeY_v1"],
+[ "08-122", "08-122_S_cladeB_v7"],
+[ "09-06", "09-06_L_cladeC_v1"],
+[ "09-06", "09-06_L_cladeF_v1"],
+[ "09-06", "09-06_S_cladeE_v1"],
+[ "10-04", "10-04_L_cladeA_v1"],
+[ "10-04", "10-04_L_cladeC_v1"],
+[ "10-04", "10-04_L_cladeI_v1"],
+[ "10-04", "10-04_L_cladeK_v1"],
+[ "10-04", "10-04_L_cladeN_v1"],
+[ "10-04", "10-04_L_cladeO_v1"],
+[ "10-04", "10-04_L_cladeU_v1"],
+[ "10-04", "10-04_S_cladeE_v1"],
+[ "10-25", "10-25_L_cladeA_v1"],
+[ "10-25", "10-25_L_cladeC_v1"],
+[ "10-25", "10-25_L_cladeF_v1"],
+[ "10-25", "10-25_L_cladeI_v1"],
+[ "10-25", "10-25_L_cladeT_v1"],
+[ "10-25", "10-25_S_clade8_v1"],
+[ "10-25", "10-25_S_cladeE_v1"],
+[ "10-31", "10-31_L_cladeY_v1"],
+[ "10-31", "10-31_S_cladeE_v1"],
+[ "10-35", "10-35_L_cladeG_v11"],
+[ "10-35", "10-35_S_cladeE_v1"],
+[ "10-43", "10-43_L_cladeG_v1"],
+[ "10-43", "10-43_S_cladeE_v1"],
+[ "10-44", "10-44_L_cladeY_v1"],
+[ "10-44", "10-44_S_cladeE_v1"],
+[ "10-46", "10-46_L_cladeA_v1"],
+[ "10-46", "10-46_L_cladeC_v1"],
+[ "10-46", "10-46_L_cladeF_v1"],
+[ "10-46", "10-46_L_cladeI_v1"],
+[ "10-46", "10-46_S_clade8_v1"],
+[ "10-46", "10-46_S_cladeE_v1"],
+[ "10-48", "10-48_L_cladeA_v1"],
+[ "10-48", "10-48_L_cladeC_v1"],
+[ "10-48", "10-48_L_cladeF_v1"],
+[ "10-48", "10-48_L_cladeI_v1"],
+[ "10-48", "10-48_L_cladeM_v1"],
+[ "10-48", "10-48_S_cladeE_v1"],
+[ "10-51", "10-51_L_cladeC_v1"],
+[ "10-51", "10-51_L_cladeI_v1"],
+[ "10-51", "10-51_S_clade8_v1"],
+[ "10-51", "10-51_S_cladeE_v1"],
+[ "10-54", "10-54_L_cladeA_v1"],
+[ "10-54", "10-54_L_cladeC_v1"],
+[ "10-54", "10-54_L_cladeF_v1"],
+[ "10-54", "10-54_L_cladeI_v1"],
+[ "10-54", "10-54_S_clade8_v1"],
+[ "10-54", "10-54_S_cladeE_v1"],
+[ "11-15", "11-15_L_cladeF_v1"],
+[ "11-15", "11-15_L_cladeG_v1"],
+[ "11-15", "11-15_L_cladeI_v1"],
+[ "11-15", "11-15_S_clade7_v1"],
+[ "11-15", "11-15_S_cladeE_v1"],
+[ "12-L-10444", "12-L-10444_L_cladeC_v1"],
+[ "12-L-10444", "12-L-10444_L_cladeG_V1"],
+[ "12-L-10444", "12-L-10444_L_cladeS_v1"],
+[ "12-L-10444", "12-L-10444_S_cladeE_v1"],
+[ "13-03", "13-03_L_cladeC_v1"],
+[ "13-03", "13-03_S_cladeE_v1"],
+[ "17037", "17037_L_cladeY_v1"],
+[ "17037", "17037_S_cladeD_v1"],
+[ "4039", "4039_L_cladeA_v1"],
+[ "4039", "4039_L_cladeC_v1"],
+[ "4039", "4039_L_cladeF_v1"],
+[ "4039", "4039_L_cladeG_v1"],
+[ "4039", "4039_L_cladeH_v1"],
+[ "4039", "4039_L_cladeM_v1"],
+[ "4039", "4039_L_cladeN_v1"],
+[ "4039", "4039_L_cladeU_v1"],
+[ "4039", "4039_L_cladeV_v1"],
+[ "4039", "4039_L_cladeZ_v1"],
+[ "4039", "4039_S_cladeE_v1.1"],
+[ "6053", "6053_L_cladeI_v1"],
+[ "6053", "6053_S_cladeE_v1"],
+[ "97-45", "97-45_L_cladeA_v1"],
+[ "97-45", "97-45_L_cladeC_v1"],
+[ "97-45", "97-45_L_cladeF_v1"],
+[ "97-45", "97-45_L_cladeG_v1"],
+[ "97-45", "97-45_L_cladeI_v1"],
+[ "97-45", "97-45_L_cladeK_v1"],
+[ "97-45", "97-45_L_cladeN_v1"],
+[ "97-45", "97-45_L_cladeP_v1"],
+[ "97-45", "97-45_L_cladeQ_v1"],
+[ "97-45", "97-45_L_cladeR_v1"],
+[ "97-45", "97-45_L_cladeV_v1"],
+[ "97-45", "97-45_S_clade6_v1"],
+[ "97-45", "97-45_S_clade9_v1"],
+[ "97-45", "97-45_S_cladeA_v1"],
+[ "97-45", "97-45_S_cladeE_v1"],
+[ "Bali-Y", "Bali-Y_L_cladeC_v1"],
+[ "Bali-Y", "Bali-Y_S_cladeE_v1"],
+[ "Boomer_2", "Boomer_L_cladeC_v1"],
+[ "Boomer_2", "Boomer_L_cladeG_v1"],
+[ "Boomer_2", "Boomer_L_cladeK_v1"],
+[ "Boomer_2", "Boomer_L_cladeV_v1"],
+[ "Boomer_2", "Boomer_2_S_cladeE_v1"],
+[ "CAS02", "CAS02_L_cladeL_v1"],
+[ "CAS02", "CAS02_S_cladeC_v1"],
+[ "CAS03", "CAS03_L_cladeL_v1"],
+[ "CAS03", "CAS03_S_cladeC_v1"],
+[ "CAS05", "CAS05_L_cladeL_v1"],
+[ "CAS05", "CAS05_S_cladeC_v1"],
+[ "CAS06", "CAS06_L_cladeY_v1"],
+[ "CAS06", "CAS06_S_cladeD_v1"],
+[ "CAS07", "CAS07_L_cladeY_v1"],
+[ "CAS07", "CAS07_S_cladeD_v1"],
+[ "Keil_Boa_F", "Keil_Boa_F_L_cladeC_v1"],
+[ "Keil_Boa_F", "Keil_Boa_F_S_cladeE_v1"],
+[ "Keil_Boa_M", "Keil_Boa_M_L_cladeC_v1"],
+[ "Keil_Boa_M", "Keil_Boa_M_S_cladeE_v1"],
+[ "N05-383", "N05-383_L_cladeF_v1"],
+[ "N05-383", "N05-383_L_cladeI_v1"],
+[ "N05-383", "N05-383_L_cladeX_v1"],
+[ "N05-383", "N05-383_S_cladeE_v1"],
+[ "Pillowcase", "Pillowcase_L_cladeC_v1"],
+[ "Pillowcase", "Pillowcase_L_cladeF_v1"],
+[ "Pillowcase", "Pillowcase_L_cladeG_v1"],
+[ "Pillowcase", "Pillowcase_L_cladeK_v1"],
+[ "Pillowcase", "Pillowcase_L_cladeO_v1"],
+[ "Pillowcase", "Pillowcase_L_cladeV_v1"],
+[ "Pillowcase", "Pillowcase_S_clade5rE_v1"],
+[ "Pillowcase", "Pillowcase_S_cladeE_v1"],
+[ "SII_A", "SII_A_L_cladeC_v1"],
+[ "SII_A", "SII_A_L_cladeK_v1"],
+[ "SII_A", "SII_A_L_cladeXrKX_v1"],
+[ "SII_A", "SII_A_S_cladeE_v1"],
+[ "SII_A", "SII_A_S_cladeErAE_v1"],
+[ "SII_B", "SII_B_L_cladeK_v1"],
+[ "SII_B", "SII_B_L_cladeXrKX_v1"],
+[ "SII_B", "SII_B_S_cladeE_v1"],
+[ "SII_D", "SII_D_L_cladeA_v1"],
+[ "SII_D", "SII_D_L_cladeC_v1"],
+[ "SII_D", "SII_D_L_cladeI_v1"],
+[ "SII_D", "SII_D_L_cladeZ_v1"],
+[ "SII_D", "SII_D_S_cladeE_v1"],
+[ "SII_E", "SII_E_L_cladeA_v1"],
+[ "SII_E", "SII_E_L_cladeC_v1"],
+[ "SII_E", "SII_E_L_cladeI_v1"],
+[ "SII_E", "SII_E_L_cladeJ_v1"],
+[ "SII_E", "SII_E_L_cladeZ_v1"],
+[ "SII_E", "SII_E_S_cladeE_v1"],
+[ "SII_F", "SII_F_L_cladeA_v1"],
+[ "SII_F", "SII_F_L_cladeC_v1"],
+[ "SII_F", "SII_F_L_cladeI_v1"],
+[ "SII_F", "SII_F_L_cladeZ_v1"],
+[ "SII_F", "SII_F_S_cladeE_v1"],
+[ "Scar", "Scar_L_cladeF_v1"],
+[ "Scar", "Scar_S_cladeA_v1"],
+[ "Umbrella", "Umbrella_L_cladeF_v1"],
+[ "Umbrella", "Umbrella_S_cladeA_v1"],
+[ "Yang", "Yang_L_cladeF_v1"],
+[ "Yang", "Yang_L_cladeG_v1"],
+[ "Yang", "Yang_L_cladeI_v1"],
+[ "Yang", "Yang_L_cladeR_v1"],
+[ "Yang", "Yang_L_cladeY_v1"],
+[ "Yang", "Yang_S_clade1r_v1"],
+[ "Yang", "Yang_S_clade9_v1"],
+[ "Yang", "Yang_S_cladeA_v1"],
+[ "Yang", "Yang_S_cladeDr_v1"]];
+
+
+// global vars related to svg plot size
+
+// how tall plots will be in pixels
+var plot_canvas_height = 120;
+
+// margins for drawing areas
+var margin = {top: 20, right: 20, bottom: 40, left: 240};
+
+// width of svg canvas
+var canvas_width = 800 + margin.right + margin.left; 
+
+// svg canvas width for everything
+var svg_width = canvas_width - margin.left - margin.right;
+   
+// x-axis scaling for all plots and cartoons  -> domain units in nt
+var svg_height = plot_canvas_height - margin.top - margin.bottom;
+
+for (seg_index = 0; seg_index < segments.length; seg_index++) 
+{
+   var snake_id = segments[seg_index][0];
+   var segment_id = segments[seg_index][1];
+   render_segment(snake_id, segment_id);
+}
+
+function render_segment(snake_id, segment_id)
+{
+   var header_text = "snake " + snake_id + " " + segment_id;
+   d3.select("body").append("p").text(header_text);
+   draw_all(snake_id, segment_id);
+   return;
+}
+
+function draw_all(snake_id, segment_id)
+{
+
+   draw_cartoon(snake_id, segment_id);
+   draw_plots(snake_id, segment_id);
+   return;
+}
+
+// draw cartoon of genotype based on GFF encoding
+// not implemented yet
+function draw_cartoon(snake_id, segment_id)
+{
+   return;
+}
+
+function draw_plots(snake_id, segment_id)
+{
+   console.log (segment_id + " coverage");
+   
+   var width = svg_width;
+   var height = svg_height;
+
+   // add a new svg canvas area
+   var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+ 
+    // var file_name = snake_id + "." + segment_id + ".tsv";
+    var file_name = segment_id + ".tsv";
+    var tsv_data_file = "http://localhost:8888/" + file_name;
+
+    // read file w/ coverage data
+    d3.tsv(tsv_data_file, process_tsv);
+
+
+    // accessor function to process data from tsv file
+    // will actually draw the plots
+    // this function gets called once d3.tsv is done reading data file (asynchronous)
+    function process_tsv(data)
+    {
+
+
+    // Coerce the data to numbers.
+    data.forEach(function(d) {
+       d.x = +d.x;
+       d.coverage = +d.coverage;
+       d.insert_size = +d.insert_size;
+       if (d.secondary_structure == 0)
+       {
+          d.secondary_structure = null;
+       }
+       else
+       {
+          d.secondary_structure = +d.secondary_structure;
+       }
+       // if (d.x < 20)
+        // {
+          //  console.log(d.x + " - " + d.coverage + " - " + d.insert_size + " - " +  d.secondary_structure);
+        // }
+
+     });
+
+    function valid_ss_data(d)
+    {
+       return d.secondary_structure != null;
+    }
+    var ss_data = data.filter(valid_ss_data);
+
+ 
+     // Compute the scales’ domains.
+     // x.domain(d3.extent(data, function(d) { return d.x; })).nice();
+     var nt_x = d3.scale.linear();
+     var max_x =  d3.max(data, function(d) { return d.x});
+
+     var max_nt = 8000;
+     if (max_x < 4000)
+     {
+         max_nt = max_nt / 2;
+         width = width / 2;
+     }
+
+     nt_x.domain([1, max_nt]); // 8000 nt will be width of drawing area for L segs
+     nt_x.range([0,width]);
+    
+     // Add the x-axis.
+     // transform the x axis height y units to push it down to the bottom of the graph
+     svg.append("g")
+         .attr("class", "x axis")
+         .attr("transform", "translate(0," + height + ")")
+         .call(d3.svg.axis().scale(nt_x).orient("bottom"));
+
+     // Add an x-axis label.
+     svg.append("text")
+     .attr("class", "x label")
+     .attr("font", "helvetica")
+     .attr("text-anchor", "middle")
+     .attr("x", ( width / 2 ) )
+     .attr("y", height + 30 )
+     .text("genome position (nt)");
+
+     // make y axes now
+
+     // max value for y-axis log coverage
+     var max_y =  d3.max(data, function(d) { return d.coverage});
+     if (max_y < 1000) { max_y = 1000; }
+     else if (max_y < 10000) { max_y = 10000; }
+     else if (max_y < 100000) { max_y = 100000; console.log ("that's some pretty high coverage! " + max_y); }
+
+     // cov_y is a (log) scale for the coverage y value 
+     var cov_y = d3.scale.log();
+     // remember, y-coords start at top of page so y axis is "upside down"
+     cov_y.range([height, 0]);
+     cov_y.domain([1, max_y]);
+
+     // insert size y axis -> 0-1000
+     // remember: input domain,  output range
+     var ins_y = d3.scale.linear();
+     ins_y.range([height, 0]);
+     ins_y.domain([0, 600]);
+     // ins_y.domain([0, d3.max(data, function(d) { return d.insert_size; }).nice()]);
+         
+     // secondary structure y axis -> 0-100
+     // remember: input domain,  output range
+     var ss_y = d3.scale.linear();
+     ss_y.range([height, 0]);
+     ss_y.domain([0, 100]);
+         
+     // variables to handle positioning of multiple y axes
+     var scale_number = 0;
+     var y_axis_offset = -70; // for subsequent axes
+     var y_axis_text_offset = -42;
+
+     // Add the coverage y-axis.
+     svg.append("g")
+         .attr("class", "cov y axis")
+         .attr("transform", "translate(" + (scale_number * y_axis_offset) +", 0)")
+         .call(d3.svg.axis().scale(cov_y).orient("left").ticks(0));
+
+     // coverage y-axis label
+     svg.append("text")
+     .attr("class", "cov y label")
+     .attr("text-anchor", "middle")
+     .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset))
+     .attr("x", 0 - (height / 2) )
+     // .attr("dy", "1em") // units of em shift text by size of current font
+     .attr("transform", "rotate(-90)")
+     .text("coverage");
+        
+     scale_number++;
+     // Add the insert size y-axis.
+     svg.append("g")
+         .attr("class", "ins axis")
+         .attr("transform", "translate(" + (scale_number * y_axis_offset) +", 0)")
+         .attr("fill", "blue")
+         .call(d3.svg.axis().scale(ins_y).orient("left").ticks(5));
+
+     // insert size y-axis label
+     svg.append("text")
+     .attr("class", "ins y label")
+     .attr("text-anchor", "middle")
+     .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset) + 8)
+     .attr("x", 0 - (height / 2) )
+     // .attr("dy", "1em") // units of em shift text by size of current font
+     .attr("transform", "rotate(-90)")
+     .attr("fill", "blue")
+     // .attr("stroke", "blue")
+     // .attr("stroke-width", 0.25)
+     .text("insert size (nt)");
+        
+        
+     scale_number++;
+     // Add the secondary structure size y-axis.
+     svg.append("g")
+         .attr("class", "ss axis")
+         .attr("transform", "translate(" + (scale_number * y_axis_offset) +", 0)")
+         .attr("fill", "red")
+         .call(d3.svg.axis().scale(ss_y).orient("left").ticks(3));
+
+     // secondary structure y-axis label
+     svg.append("text")
+     .attr("class", "ss y label")
+     .attr("text-anchor", "middle")
+     .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset))
+     .attr("x", 0 - (height / 2) )
+     // .attr("dy", "1em") // units of em shift text by size of current font
+     .attr("fill", "red")
+     .attr("transform", "rotate(-90)")
+     .text("∆G (kcal/mol)");
+
+     // secondary structure y-axis label
+     svg.append("text")
+     .attr("class", "ss y label")
+     .attr("text-anchor", "middle")
+     .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset)+12)
+     .attr("x", 0 - (height / 2) )
+     // .attr("dy", "1em") // units of em shift text by size of current font
+     .attr("fill", "grey")
+     .attr("transform", "rotate(-90)")
+     .text("(∆G<50 grey)");
+
+     // now actually plot the data!
+
+     // this is the line for the coverage data
+     var cov_lineFunction = d3.svg.line()
+        .x(function(d) { return nt_x(d.x); })
+        // since log scale 0 not allowed -> 0.1 will be below axis, therefore 0-like
+        .y(function(d) { if (d.coverage < 1) { return cov_y(1); } else { return cov_y(d.coverage); } });
+
+     var cov_lineGraph = svg.append("g").append("path")
+                        .attr("d", cov_lineFunction(data))
+                        .attr("class", "cov_line");
+
+     // this is the line for the insert size data
+     var ins_lineFunction = d3.svg.line()
+        .x(function(d) { return nt_x(d.x); })
+        .y(function(d) { return ins_y(d.insert_size); } ) ;
+
+     var ins_lineGraph = svg.append("g").append("path")
+                        .attr("d", ins_lineFunction(data))
+                        .attr("stroke", "blue")
+                        .attr("stroke-width", 1)
+                        .attr("fill", "none");
+
+
+     // this complicated business creates a "gradient" to color structure values above 50 red
+     // and those below 50 light grey
+     svg.append("linearGradient")
+      .attr("id", "energy-gradient")
+      .attr("gradientUnits", "userSpaceOnUse")
+      .attr("x1", 0).attr("y1", ss_y(49))
+      .attr("x2", 0).attr("y2", ss_y(51))
+     .selectAll("stop")
+      .data([
+        {offset: "0%", color: "lightgrey"},
+        {offset: "50%", color: "lightgrey"},
+        {offset: "50%", color: "red"},
+        {offset: "100%", color: "red"}
+      ])
+    .enter().append("stop")
+      .attr("offset", function(d) { return d.offset; })
+      .attr("stop-color", function(d) { return d.color; });
+
+
+     // this is the line for the insert size data
+     var ss_lineFunction = d3.svg.line()
+        // .x(function(d) { if (d.x % 5) { return undefined; } else { return nt_x(d.x);}  })
+        .defined(function(d) { return d.secondary_structure != null; })
+        .x(function(d) { return nt_x(d.x);  })
+        .y(function(d) { return ss_y(d.secondary_structure);})
+        .interpolate("linear");
+
+     var ss_lineGraph = svg.append("g").append("path")
+                        .attr("d", ss_lineFunction(ss_data))
+                        // .attr("stroke", "red")
+                        .attr("class", "ss_line")
+                        .attr("stroke-width", 1)
+                        .attr("fill", "none");
+
+   };
+}
+</script>

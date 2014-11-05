@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.land {
+  fill: #fff;
+}
+
+.county-boundary {
+  fill: none;
+  stroke: #DDD;
+  stroke-width: .5px;
+}
+
+.state-boundary {
+  fill: none;
+  stroke: #000;
+}
+
+.country-boundary {
+  fill: none;
+  stroke: #000;
+}
+
+.place,
+.place-label {
+  fill: #F00;
+}
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var width = 960,
+    height = 500;
+
+var projection = d3.geo.albersUsa()
+    .scale(960)
+    .translate([width / 2, height / 2]);
+
+var path = d3.geo.path()
+    .projection(projection)
+    .pointRadius(4);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+d3.json("http://localhost:8888/us-plus_snake_cities.json", function(error, us) {
+
+  console.log(us);
+
+  svg.insert("path", ".graticule")
+      .datum(topojson.feature(us, us.objects.land))
+      .attr("class", "land")
+      .attr("d", path);
+
+  // svg.insert("path", ".graticule")
+      // .datum(topojson.mesh(us, us.objects.counties, function(a, b) { return a !== b && !(a.id / 1000 ^ b.id / 1000); }))
+      // .attr("class", "county-boundary")
+      // .attr("d", path);
+
+  svg.insert("path", ".graticule")
+      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+      .attr("class", "state-boundary")
+      .attr("d", path);
+
+  svg.insert("path", ".graticule")
+      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a === b; }))
+      .attr("class", "country-boundary")
+      .attr("d", path);
+
+  svg.append("path")
+     .datum(topojson.feature(us, us.objects.snake_cities))
+     .attr("d", path)
+     .attr("class", "place");
+
+});
+
+d3.select(self.frameElement).style("height", height + "px");
+
+</script>

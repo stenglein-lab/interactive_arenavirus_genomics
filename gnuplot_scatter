@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# this bash file writes a gnuplot script then executes gnuplot to run the script
+# Mark Stenglein 5.25.2012
+
+histo_file=$1
+script_file=${histo_file}.gnuplot_script
+
+cat > $script_file << GNUPLOT_SCRIPT
+
+set style line 1 lc rgb 'black' pt 5 ps 0.5  # square
+set style line 2 lc rgb 'black' pt 7 ps 0.5  # circle
+set style line 3 lc rgb 'black' pt 9 ps 0.5  # triangle
+
+# Gnuplot script file for plotting data in file $histo_file
+set   autoscale                        # scale axes automatically
+unset log                              # remove any log-scaling
+unset label                            # remove any previous labels
+# set xtic auto                          # set xtics automatically
+# set ytic auto                          # set ytics automatically
+unset mytic
+unset mxtic
+unset my2tic
+unset mx2tic
+unset y2tic
+unset x2tic
+set ytic
+set xtic 
+set title "plot of data in $histo_file"
+# set xlabel "Genome position (nt)"
+# set ylabel "Coverage"
+# set yrange [ 1 : 1000 ]
+set logscale x
+set logscale y
+set terminal postscript
+set output "${histo_file}.ps"
+plot "${histo_file}" using 2:3 ls 2
+
+GNUPLOT_SCRIPT
+
+gnuplot $script_file
+pstopdf ${histo_file}.ps -o ${histo_file}.pdf

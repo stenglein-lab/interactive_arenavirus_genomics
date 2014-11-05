@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+
+use strict;
+
+my $x_bases_per_pixel = 10;
+my $y_units_per_pixel = 1;
+my $y_offset = 0.1;
+
+print "<polyline points=\"";
+while (<>)
+{
+   chomp;
+   my ($x, $y) = split ;
+   my $scaled_x = $x / $x_bases_per_pixel;
+   my $scaled_y = $y_offset + ($y / $y_units_per_pixel);
+   print "$scaled_x,$scaled_y ";
+}
+print "\" style=\"fill:none;stroke:black;stroke-width:1\" />\n";
+

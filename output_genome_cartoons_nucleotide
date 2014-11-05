@@ -1,0 +1,238 @@
+#!/usr/bin/perl
+
+use strict;
+use PostScript::Simple;
+
+my $usage = <<USAGE;
+
+  usage: $0 gff_file
+
+USAGE
+
+if (-t STDIN and (scalar @ARGV == 0)) { print $usage and exit; }
+
+my $residues_per_inch = 5000;  ## TODO: customizable
+
+my $page_width = 8.5;
+my $page_height = 11;
+my $one_pt_in = 1 / 72; # 1 pt in inches
+my $p = new PostScript::Simple(papersize => "Letter",
+                            colour => 1,
+                            eps => 0,
+                            coordorigin => "LeftTop",
+                            direction => "RightDown",
+                            units => "in",
+                            );
+# create a new page
+$p->newpage;
+
+my $x1 = 0;
+my $y1 = 0;
+my $x_offset = 0.2;
+my $y_offset = 0.2;
+
+# a 25 color scheme + black
+# from: http://geography.uoregon.edu/datagraphics/color_scales.htm#Categorical Color Schemes
+my @l_colors  = ([153,15,15], [178,44,44], [204,81,81], [229,126,126], [255,178,178], [153,84,15], [178,111,44], [204,142,81], [229,177,126], [255,216,178], [107,153,15], [133,178,44], [163,204,81], [195,229,126], [229,255,178], [15,107,153], [44,133,178], [81,163,204], [126,195,229], [178,229,255], [38,15,153], [66,44,178], [101,81,204], [143,126,229], [191,178,255], [0,0,0]);
+
+# a 12 color scheme
+# from: http://geography.uoregon.edu/datagraphics/color_scales.htm#Categorical Color Schemes
+# my @s_colors = ([255,191,127], [255,127,0], [255,255,153], [255,255,50], [178,255,140], [50,255,0], [165,237,255], [25,178,255], [204,191,255], [101,76,255], [255,153,191], [229,25,50]);
+my @s_colors = ([255,191,127], [255,127,0], [0,0,0], [160,160,160], [178,255,140], [50,255,0], [165,237,255], [25,178,255], [204,191,255], [101,76,255], [255,153,191], [229,25,50]);
+
+# another categorical color scheme
+# "#1f77b4", "#aec7e8", "#ff7f0e", "#ffbb78", "#2ca02c", "#98df8a", "#d62728", "#ff9896", "#9467bd", "#c5b0d5", "#8c564b", "#c49c94", "#e377c2", "#f7b6d2", "#7f7f7f", "#c7c7c7", "#bcbd22", "#dbdb8d", "#17becf", "#9edae5"
+
+my @colors_GREY  = ( [255, 255, 255],
+                [207, 224, 237],
+                [160, 191, 224],
+                [109, 152, 205],
+                [71, 99, 174],
+                [25, 81, 64] );
+
+# black #000000  (0,0,0)
+# dim gray / dim grey  #696969  (105,105,105)
+# gray / grey #808080  (128,128,128)
+# dark gray / dark grey   #A9A9A9  (169,169,169)
+# silver   #C0C0C0  (192,192,192)
+# light gray / light grey #D3D3D3  (211,211,211)
+# gainsboro   #DCDCDC  (220,220,220)
+# white smoke #F5F5F5  (245,245,245)
+# white #FFFFFF  (255,255,255)
+
+my $gff_fn = shift or print $usage and die ("error: no gff file\n");;
+
+
+open (my $gff_fh, "<", $gff_fn) or die $!;
+
+my $acquiring_seq = 0;
+my $seq_name = undef;
+my @seq_names = ();
+my %seqs = ();
+my %seq_features = ();
+
+while (<$gff_fh>)
+{
+   ##source-version geneious 6.1.6
+   ## v1_ORF1AB_pp1ab_v21e4_curated Geneious misc_feature   7709  7822  .  .  .  Name=EndoU;created by=User
+   ## v1_ORF1AB_pp1ab_v21e4_curated Geneious misc_feature   3330  3419  .  .  .  Name=Predicted PFAM Methyltransf_12 (PF08242.7 Evalue 9.7e-08);created by=User;ID=YdCkrKoF0+i9JhvaYuJhMTBaBPs.1391212388986.2147
+   chomp;
+   if (/^##DNA (.*)/)
+   {
+      $acquiring_seq = 1;
+      $seq_name = $1;
+      push @seq_names, $seq_name;
+   }
+   elsif (/^##end-DNA/)
+   {
+      $acquiring_seq = 0;
+   }
+   elsif ((/^##(.*)/) and $acquiring_seq)
+   {
+      $seqs{$seq_name} .= $1;
+   }
+   elsif (/^##/)
+   {
+      next;
+   }
+   my @data = split "\t";
+   my $seq_id = $data[0];
+   push @{$seq_features{$seq_id}}, \@data;
+}
+
+$p->setfont("Helvetica", 12);
+my $seq_counter = 0;
+
+foreach my $seq (@seq_names)
+{
+   draw_one_seq ($seq);
+   $seq_counter += 1;
+}
+
+
+sub draw_one_seq
+{
+   my $id = $_[0]; 
+   my $seq_height = 2 * $one_pt_in; # 2 pt line,essentially
+   my $feature_height = 0.20; # inches
+   my $page_top_offset = 0.5;
+
+   my $y_offset = 2; #inches
+
+   my $y_feature_offset = $seq_height + 0.1;
+
+   my $y_text_offset = 0.05;
+
+   my $seq = $seqs{$id};
+   my $seq_length = length $seq; 
+
+   my $x1 =  0;
+   my $x2 = $seq_length / $residues_per_inch;
+   my $y1 =  $page_top_offset + ($seq_counter * ($y_offset));
+   my $y2 =  $y1 + $seq_height;
+
+   # black line
+   $p->setcolour(0,0,0);
+   # 1 pt line width
+   $p->setlinewidth ($one_pt_in);
+   $p->box( {filled => 1}, $x1,$y1,$x2,$y2);
+
+   # black text - output name of seq
+   $p->setcolour(0,0,0);
+   my $text_x = $x1;
+   my $text_y = $y1 - $y_text_offset;
+   $p->text($text_x, $text_y,  "$id");
+
+   # output features
+   ## v1_ORF1AB_pp1ab_v21e4_curated Geneious misc_feature   7709  7822  .  .  .  Name=EndoU;created by=User
+
+   my $feature_counter = 0;
+   my $feature_heights = 6;
+   my $feature_text_offset = 2 * (8 * $one_pt_in); # 2x 8-pt font height 
+
+   # kludge to sort features in order on seq if not so in GFF file
+   my %feature_position_hash = ();
+   my $i = 0;
+   foreach my $feature_array_ref (@{$seq_features{$id}})
+   {
+      my @fields = @{$feature_array_ref};
+      my $start = $fields[3];
+      $feature_position_hash{$i} = $start;
+      $i++;
+   }
+
+   foreach my $feature_array_ref_i (sort { $feature_position_hash{$a} <=> $feature_position_hash{$b}} keys %feature_position_hash )
+   {
+      my @feature_array_refs = @{$seq_features{$id}};
+      my $feature_array_ref = $feature_array_refs[$feature_array_ref_i];
+      my @fields = @{$feature_array_ref};
+      my $start = $fields[3];
+      my $frame = $start % 3;
+      if ($frame == 0) { $frame = 3; }
+      my $end = $fields[4];
+      my $x1 = $start / $residues_per_inch;
+      my $x2 = $end / $residues_per_inch;
+      my $y1 = $page_top_offset + ($seq_counter * ($y_offset)) + ($frame * $y_feature_offset);
+      my $y2 = $y1 + $feature_height;
+
+      # navy blue box
+      $p->setcolour(0,0,128);
+      # 1 pt line width
+      $p->setlinewidth ($one_pt_in);
+      $p->box( {filled => 1}, $x1,$y1,$x2,$y2);
+      my $feature_text = "?";
+
+      my $feature_text_all = $fields[8];
+      #                         Name=Predicted PFAM Methyltransf_12 (P
+      if ($feature_text_all =~ /Name=Predicted PFAM (.*) \(/)
+      {
+         $feature_text = $1;
+      }
+      elsif ($feature_text_all =~ /Name=(.*);/)
+      {
+         $feature_text = $1;
+      }
+      elsif ($feature_text_all =~ /Name=(.*)/)
+      {
+         $feature_text = $1;
+      }
+      else
+      {
+         die "couldn't parse name from $feature_text_all \n";
+      }
+      
+      # black text
+      # warn "$feature_text_all -> $feature_text\n";
+      warn "$feature_text -> $start -> $frame\n";
+      $p->setfont("Helvetica", 8);
+      $p->setcolour(0,0,0);
+      my $row = $feature_counter % $feature_heights;
+      my $text_x = $x1;
+      my $text_y = $y2  + (8 * $one_pt_in) + $y_text_offset + ($row * $feature_text_offset) ;
+      $p->text($text_x, $text_y,  "$feature_text");
+      # little line
+      # line(x1,y1, x2,y2)
+      my $l_x1 = $x1;
+      my $l_x2 = $x1;
+      my $l_y1 = $y2;
+      my $l_y2 = $text_y - (8 * $one_pt_in);
+      # set to 1/2 pt
+      $p->setlinewidth(($one_pt_in / 2));
+      $p->line($l_x1, $l_y1, $l_x2, $l_y2);
+
+      # set back to 1 pt
+      $p->setlinewidth($one_pt_in);
+
+      $feature_counter += 1;
+   }
+}
+
+# write the output to a file
+my $ps_name = $gff_fn.".ps";
+$p->output("$ps_name");
+
+# run pstopdf
+my @args = ("pstopdf", "$ps_name");
+system(@args) == 0 or die "system @args failed: $?"
+
+

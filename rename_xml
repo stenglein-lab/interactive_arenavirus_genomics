@@ -1,0 +1,31 @@
+#!/usr/bin/perl
+
+use strict;
+
+my $map_file = shift or die;
+
+while (<>)
+{
+   chomp;
+
+   #  if (/LOCUS\s+(\S+)\s/)
+   #  <INSDSeq_locus>05-12_L_cladeA_v1</INSDSeq_locus>
+
+   if (/INSDSeq_locus>(\S+)<\/INSDSeq_locus/)
+   {
+       # my $new_name = $seg_map{$1};
+       my $new_name = `grep $1 $map_file | cut -f 2`;
+       chomp $new_name;
+       if (!$new_name)
+       {
+          die "error: couldn't find new name for $1\n";
+       }
+       my $new_line = $_;
+       $new_line =~ s/$1/$new_name/;
+       print "$new_line\n";
+   }
+   else
+   {
+      print "$_\n";
+   }
+}

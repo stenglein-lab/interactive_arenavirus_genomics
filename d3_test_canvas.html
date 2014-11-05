@@ -1,0 +1,31 @@
+<html>
+
+<head>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+</head>
+
+<body>
+<script charset="utf-8">
+
+var width = 700;
+var height = 500;
+
+var svg = d3.select("body").append("svg:svg").attr("width", width).attr("height", height);
+
+// var width_pcts = [30,10,20,10,30];
+var canvas_areas = [ {"w": 30, "o": 0, "c": "blue"} ,
+                     {"w": 10, "o": 30, "c": "red"} ,
+                     {"w": 20, "o": 40, "c": "green"} ,
+                     {"w": 10, "o": 60, "c": "grey"} ,
+                     {"w": 30, "o": 70, "c": "black"} ];
+
+var all_rects = svg.selectAll("rect").data(canvas_areas);
+
+// all_rects.enter().append("rect").attr("fill", "slateblue").attr("width", function(d){return d * width / 100;}).attr("height", height).style("margin-left", function (d) {return d + "%";});
+O// all_rects.enter().append("rect").attr("fill", function(d){return d.c;}).attr("width", function(d){return d.w * width / 100;}).attr("height", height).attr("transform", function (d){ return "translate("+ d.o * width / 100 +",0)"; });
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<html>
+
+<head>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+</head>
+
+<body>
+<script charset="utf-8">
+
+var my_data = [72, 150, 300]
+
+var svg = d3.select("body").append("svg:svg").attr("width", 500).attr("height", 500);
+
+var all_the_circles = svg.selectAll("circle").data(my_data);
+
+all_the_circles.enter().append("circle").attr("cx", function(d) {return d;})
+               .attr("cy", function(d) {return d;})
+               .attr("fill", "lightslateblue");
+
+all_the_circles.attr("r", 0).transition().duration(5000).attr("r", function(d) { return (d/10); });
+
+var some_rects = svg.selectAll("rect").data(my_data);
+
+all_the_circles.enter().append("rect")
+               .attr("x", function(d) {return d;})
+               .attr("y", function(d) {return d;})
+               .attr("width", function(d) {return d ;})
+               .attr("height", function(d) {return d ;})
+               .attr("stroke", "black")
+               .attr("fill", "grey");
+
+
+
+
+</script>
+</body>
+</html>

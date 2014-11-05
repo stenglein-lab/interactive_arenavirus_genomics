@@ -1,0 +1,8 @@
+#!/bin/bash
+
+xml_file=$1
+renamed_file=${xml_file/.xml/_renamed.xml}
+./rename_xml ../seg_map.txt < $xml_file > $renamed_file
+./xml_to_tsv  $renamed_file > ${renamed_file/xml/tsv}
+
+

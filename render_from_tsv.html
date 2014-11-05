@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+ 
+body {
+  font: 10px helvetica;
+}
+
+.header_p {
+  font: 12px helvetica;
+}
+ 
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+ 
+.point {
+  fill: steelblue;
+  stroke: #000;
+}
+
+.cov_line_blue {
+  fill: lightsteelblue;
+  stroke: black;
+  stroke-width: 1;
+}
+
+.cov_line {
+  fill: #E8E8E8;
+  stroke: black;
+  stroke-width: 1;
+}
+
+.ss_line {
+  fill: none;
+  stroke: url(#energy-gradient);
+  stroke-width: 1;
+}
+
+.ss_box {
+  fill: url(#energy-gradient);
+  stroke: black;
+  stroke-width: 1;
+}
+ 
+</style>
+<body>
+
+<p> 
+   <form id="seg_filter_form">
+      Enter tsv here 
+      <textarea  id="seg_textarea_input" name="seg_textarea_input" rows="10" cols="60"></textarea>
+      <input type="button" value="Render" id="render_button" name="render_button"/>
+   </form>
+   <form id="scale_form">
+      Width scale factor
+      <input  id="scale_input" value="1"/>
+   </form>
+   <br>
+   <form id="clear_form">
+      <input type="button" value="Clear Display" id="clear_button" name="clear_button"/>
+   </form>
+   <br> Tracks to display:
+   <br>
+   <br> coverage:     <input type="checkbox" id="cov_check" checked>
+   <br> 2˚ structure: <input type="checkbox" id="ss_check" checked>
+   <br>
+</p>
+
+<p style="page-break-after:always;"></p>
+
+<script src="./d3/d3.js"></script>
+
+<script>
+
+// main javascript/d3 for rendering cartoons and plots
+// 
+// Mark Stenglein 8/1/2014
+
+// global vars related to svg plot size
+
+// margins for drawing areas
+var plot_margin = {top: 10, right: 10, bottom: 40, left: 240};
+var cartoon_margin = {top: 20, right: 10, bottom: 10, left: 240};
+var margin = plot_margin;
+
+// width of svg canvas
+var canvas_width = 800 + margin.right + margin.left; 
+
+// svg canvas width for everything
+var svg_width = canvas_width - margin.left - margin.right;
+   
+// y-axis scaling 
+// how tall plots will be in pixels
+var plot_canvas_height = 120;
+var svg_height = plot_canvas_height - margin.top - margin.bottom;
+
+// vars to control printing
+var segment_count = 0;
+var segments_per_page = 6;
+
+// process input
+d3.select("#render_button").on("click", function() {
+
+  clear_displayed_elements();
+  var tsv_text = document.getElementById('seg_textarea_input').value;
+  // console.log (tsv_text);
+  render_from_tsv(tsv_text);
+  });
+
+function clear_displayed_elements()
+{
+  console.log("clearing display...");
+  d3.select("body").selectAll("svg").remove();
+  d3.select("body").selectAll(".header_p").remove();
+}
+
+// refresh
+d3.select("#clear_button").on("click", clear_displayed_elements);
+
+function render_from_tsv(tsv_string)
+{
+   draw_all(tsv_string);
+   return;
+}
+
+function draw_all(tsv_string)
+{
+   draw_cartoon(tsv_string);
+   return;
+}
+
+// draw cartoons of segments showing ORFS and other annotations
+function draw_cartoon(tsv_string)
+{
+   // console.log ("drawing genome cartoon for segment " + segment_id  );
+   var width_scale = document.getElementById('scale_input').value;
+   var width = svg_width * width_scale;
+   var height = 40; // don't hardcode
+
+   // add a new svg canvas area
+   var svg = d3.select("body").append("svg")
+    .attr("width", width + cartoon_margin.left + cartoon_margin.right)
+    .attr("height", height + cartoon_margin.top + cartoon_margin.bottom ) 
+    .append("g")
+    .attr("transform", "translate(" + cartoon_margin.left + "," + cartoon_margin.top + ")");
+ 
+    // console.log(tsv_string);
+    // read file w/ annotation data
+    var tsv_rows = d3.tsv.parseRows(tsv_string);
+
+    process_tsv_for_cartoon(tsv_rows);
+
+  // function to actually draw the cartoon
+  function process_tsv_for_cartoon(data)
+  {
+
+    data.forEach(function(d) {
+       // segment start stop  type
+       d.segment = d[0];
+       // Coerce the data to numbers.
+       d.start = +d[1];
+       d.stop = +d[2];
+       d.type = d[3];
+       // d.start = +d.start;
+       // d.stop = +d.stop; 
+       });
+
+    // figure out how long this segment is
+    var seq_length = 1;
+    data.forEach(function(d) 
+    { 
+       if (d.type === "S")
+       {
+          seq_length = d.stop;
+       }
+    });
+
+    // setup scales for drawing
+
+    // Compute the scales’ domains.
+    var nt_x = d3.scale.linear();
+
+     var max_nt = 8000;
+     if (seq_length < 4000)
+     {
+         max_nt = max_nt / 2;
+         width = width / 2;
+     }
+
+     nt_x.domain([1, max_nt]); // 8000 nt will be width of drawing area for L segs
+     nt_x.range([0,width]);
+
+     // y scale 
+     // remember: input domain,  output range
+     // y units for drawing objects will be 0-100
+     // so, like a percentage of whatever the height of the drawing area is
+     var y_scale = d3.scale.linear();
+     y_scale.range([height, 0]);
+     y_scale.domain([0, 100]);
+
+     // draw a line for the segment
+     var y_midpoint = 30; // these units in % of drawing area, essentially
+     var orf_height = 25;
+     var seg_line_data = [ { "x": 1,          "y": y_midpoint},  
+                           { "x": seq_length, "y": y_midpoint}];
+
+     var seg_line = d3.svg.line()
+         .x(function(d) { return nt_x(d.x); })
+         .y(function(d) { return y_scale(d.y); });
+
+     var ss_lineGraph = svg.append("g").append("path")
+                        .attr("d", seg_line(seg_line_data))
+                        .attr("stroke", "black")
+                        .attr("stroke-width", 1)
+                        .attr("fill", "none");
+
+     // -----------------------------------
+     // draw ORFs and partial ORFS cartoons
+     // -----------------------------------
+
+     // create a subset of all features that are ORFs or partial ORFs
+     function get_orf_data(d)
+     {
+        if (d.type === 'L' || d.type === 'Z' || d.type === 'PL' || d.type === 'PZ') { return true; }
+        else if (d.type === 'NP' || d.type === 'GPC' || d.type === 'PNP' || d.type === 'PGPC') { return true; }
+        else { return false; }
+     }
+     var orf_data = data.filter(get_orf_data);
+ 
+     // for each of these features
+     orf_data.forEach(function(d)
+     {
+        var orf_label = "";
+        var orf_color = "steelblue";
+
+        if (d.type === 'L' || d.type === 'Z' || d.type === 'NP' || d.type === 'GPC') { orf_label = d.type + " CDS"; }
+        else if (d.type === 'PL' || d.type === 'PZ' || d.type === 'PNP' || d.type === 'PGPC') { orf_label = d.type.substring(1) ; orf_color = "goldenrod" }
+
+        //               |-| <- arrow_delta
+        //  -------------\
+        //  |             \
+        //  |             /|
+        //  -------------/ |
+        //  |              |   
+        //  start          stop
+        //
+        // draw arrow-boxes for each ORF
+        var arrow_delta = 80; // nt units 
+        if (d.stop < d.start)
+        {
+           // anti-sense feature
+           arrow_delta = 0-arrow_delta;
+        }
+
+        // setup coordinates of the box to draw for the orf
+        var orf_line_data = [ { "x": (d.start + (arrow_delta / 4)),    "y": y_midpoint },  
+                              { "x": d.start,    "y": (y_midpoint + orf_height)},  
+                              { "x": d.stop - arrow_delta,    "y": (y_midpoint + orf_height)},  
+                              { "x": d.stop,     "y": y_midpoint },  
+                              { "x": d.stop - arrow_delta,     "y": (y_midpoint - orf_height) },  
+                              { "x": d.start,    "y": (y_midpoint - orf_height) },
+                              { "x": (d.start + (arrow_delta/4)),    "y": y_midpoint } 
+                              ];  
+   
+        var orf_line = d3.svg.line()
+            .x(function(d) { return nt_x(d.x); })
+            .y(function(d) { return y_scale(d.y); });
+
+        // fudge factor for partial ORF labels, which overlap
+        // do it differently for L and Z and NP and GPC so the labels don't overlap
+        var partial_label_offset = 0;
+        if (d.type === 'PZ' || d.type === 'PGPC' )
+        {
+           partial_label_offset = 25;
+        }
+        else if ( d.type === 'PL' || d.type === 'PNP' )
+        {
+           partial_label_offset = -25;
+        }
+   
+        var orf_lineGraph = svg.append("g").append("path")
+                           .attr("d", orf_line(orf_line_data))
+                           .attr("stroke", "black")
+                           .attr("stroke-width", 1.5)
+                           .attr("fill", orf_color);
+
+        // Add a label for the ORF
+        var label_x = nt_x(partial_label_offset + (d.start + d.stop)/2);
+        var label_y = y_scale(y_midpoint + orf_height + 30);
+        svg.append("text")
+        .attr("font", "helvetica")
+        .attr("text-anchor", "middle")
+        .attr("x", label_x)
+        .attr("y", label_y)
+        .text(orf_label);
+
+
+        // Add an upper label for partial ORFs
+        if (d.type === 'PZ' || d.type === 'PL' || d.type === 'PNP' || d.type === 'PGPC' )
+        {
+           var label_x = nt_x(partial_label_offset + (d.start + d.stop)/2);
+           var label_y = y_scale(y_midpoint + orf_height + 55);
+           svg.append("text")
+           .attr("font", "helvetica")
+           .attr("text-anchor", "middle")
+           .attr("x", label_x)
+           .attr("y", label_y)
+           .text("partial");
+        }
+
+     }); // end foreach orf
+      
+     // --------------------------------------
+     // draw triangles for terminal sequences
+     // --------------------------------------
+
+     // create a subset of all features that are end motifs
+     function get_end_data(d)
+     {
+        if (d.type === 'E') { return true; }
+        else if (d.type === 'PE') { return true; }
+        else { return false; }
+     }
+     var end_data = data.filter(get_end_data);
+ 
+     // for each of these features
+     end_data.forEach(function(d)
+     {
+
+        var end_color = "purple";
+
+        //     
+        //  -\
+        //  | \
+        //  | / 
+        //  -/  
+        //  |   
+        //  start
+        //
+        // draw arrow-boxes for each end motif
+        var arrow_delta = 20; // nt units 
+        if (d.stop < d.start)
+        {
+           arrow_delta = 0-arrow_delta;
+        }
+        // coordinates of little box thingy for end features
+        var end_line_data = [ { "x": (d.start + (arrow_delta / 4)),    "y": y_midpoint },  
+                              { "x": d.start,    "y": (y_midpoint + orf_height)},  
+                              { "x": d.stop - arrow_delta,    "y": (y_midpoint + orf_height)},  
+                              { "x": d.stop,     "y": y_midpoint },  
+                              { "x": d.stop - arrow_delta,     "y": (y_midpoint - orf_height) },  
+                              { "x": d.start,    "y": (y_midpoint - orf_height) },
+                              { "x": (d.start + (arrow_delta/4)),    "y": y_midpoint } 
+                              ];  
+   
+        var end_line = d3.svg.line()
+            .x(function(d) { return nt_x(d.x); })
+            .y(function(d) { return y_scale(d.y); });
+   
+        var end_lineGraph = svg.append("g").append("path")
+                           .attr("d", end_line(end_line_data))
+                           .attr("stroke", "black")
+                           .attr("stroke-width", 1.5)
+                           .attr("fill", end_color);
+
+     }); // end foreach end motif
+      
+
+     // --------------------------------------
+     // draw triangles for recombination jxns
+     // --------------------------------------
+
+     // create a subset of all features that are rj (recombination jxn) motifs
+     function get_rj_data(d)
+     {
+        if (d.type === 'RJ') { return true; }
+        else { return false; }
+     }
+
+     var rj_data = data.filter(get_rj_data);
+ 
+     // for each of these features
+     rj_data.forEach(function(d)
+     {
+        var rj_color = "red";
+
+        //     
+        //  ______
+        //  \   /
+        //   \ / 
+        //    |   
+        // midpoint
+        //
+        var arrow_halfwidth = 40; // nt units 
+        var arrow_midpoint = (d.start + d.stop ) / 2;
+        var arrow_height = orf_height / 2; 
+
+        // coordinates of arrowhead
+        var rj_line_data = [ { "x": (arrow_midpoint - arrow_halfwidth) ,    "y": (y_midpoint+orf_height+arrow_height+10) },  
+                             { "x": (arrow_midpoint + arrow_halfwidth) ,    "y": (y_midpoint+orf_height+arrow_height+10) },  
+                             { "x": (arrow_midpoint + 0              ) ,    "y": (y_midpoint+orf_height+ 10            ) },  
+                             { "x": (arrow_midpoint - arrow_halfwidth) ,    "y": (y_midpoint+orf_height+arrow_height+10) },  
+                              ];  
+
+        // draw a dashed line too
+        var dashed_line_extra = 15;
+        var rj_dashed_line_data = [ 
+                                   { "x": arrow_midpoint,    "y": (y_midpoint + orf_height + dashed_line_extra) },  
+                                   { "x": arrow_midpoint,    "y": (y_midpoint - orf_height - dashed_line_extra) },  
+                                  ];  
+   
+        var rj_line = d3.svg.line()
+            .x(function(d) { return nt_x(d.x); })
+            .y(function(d) { return y_scale(d.y); });
+   
+        var rj_lineGraph = svg.append("g").append("path")
+                         .attr("d", rj_line(rj_dashed_line_data))
+                         .attr("stroke", "red")
+                         .attr("stroke-width", 2)
+                         .style("stroke-dasharray", ("1, 1"))  ;
+
+         var rj_lineGraph = svg.append("g").append("path")
+                         .attr("d", rj_line(rj_line_data))
+                         .attr("stroke", "black")
+                         .attr("stroke-width", 1.5)
+                         .attr("fill", rj_color);
+
+     }); // end foreach rec jxn (rj)
+      
+
+   }; // end process_tsv 
+
+   return;
+
+} // end draw_cartoons
+
+
+// draw plots (tracks) for a segment
+function draw_plots(segment_id)
+{
+   console.log ("drawing plots for segment " + segment_id  );
+   
+   var width = svg_width;
+   var height = svg_height;
+
+   // add a new svg canvas area
+   var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+ 
+    var file_name = segment_id + ".tsv";
+    // console.log ("opening " + file_name);
+    var tsv_data_file = "http://localhost:8888/" + file_name;
+
+    // read file w/ coverage data
+    d3.tsv(tsv_data_file, process_tsv_for_plots);
+
+} // end draw_plots
+
+// accessor function to process data from tsv file
+// will actually draw the plots
+// this function gets called once d3.tsv is done reading data file (asynchronous)
+// data is an array provided by d3.tsv 
+function process_tsv_for_plots(data)
+{
+    // Coerce the data to numbers.
+    data.forEach(function(d) {
+       d.x = +d.x;
+       d.coverage = +d.coverage;
+       // this because secondary structure data is sparse (not a y for each x)
+       if (d.secondary_structure == 0) { d.secondary_structure = null; }
+       else { d.secondary_structure = +d.secondary_structure; }
+     });
+
+    // get subset of x,y points for which secondary structure data exists
+    function valid_ss_data(d)
+    {
+       return d.secondary_structure != null;
+    }
+    var ss_data = data.filter(valid_ss_data);
+
+     // Make scales for displaying data
+     var nt_x = d3.scale.linear();
+     var max_x =  d3.max(data, function(d) { return d.x});
+
+     var max_nt = 8000;
+     if (max_x < 4000)
+     {
+         // S segments
+         max_nt = 4000;
+         width = width * 4 / 8;
+     }
+     else if (max_x < 7000)
+     {
+         // for most L segments
+         max_nt = 7000;
+         width = width * 7 / 8 ;
+     }
+
+     nt_x.domain([1, max_nt]); // 8000 nt will be width of drawing area for L segs
+     nt_x.range([0,width]);
+    
+     // Add the x-axis.
+     // transform the x axis height y units to push it down to the bottom of the graph
+     svg.append("g")
+         .attr("class", "x axis")
+         .attr("transform", "translate(0," + height + ")")
+         .call(d3.svg.axis().scale(nt_x).orient("bottom"));
+
+     // Add an x-axis label.
+     svg.append("text")
+     .attr("class", "x label")
+     .attr("font", "helvetica")
+     .attr("text-anchor", "middle")
+     .attr("x", ( width / 2 ) )
+     .attr("y", height + 30 )
+     .text("genome position (nt)");
+
+     // make y scales and axes now
+
+     // max value for y-axis log coverage
+     var max_y =  d3.max(data, function(d) { return d.coverage});
+     if (max_y < 1000) { max_y = 10000; }
+     else if (max_y < 10000) { max_y = 100000; }
+     else if (max_y < 100000) { max_y = 1000000; console.log ("that's some pretty high coverage! " + max_y); }
+
+     // cov_y is a (log) scale for the coverage y value 
+     var cov_y = d3.scale.log();
+     // remember, y-coords start at top of page so y axis is "upside down"
+     cov_y.range([height, 0]);
+     cov_y.domain([1, max_y]);
+
+     // secondary structure y axis -> 0-100
+     // remember: input domain,  output range
+     var ss_y = d3.scale.linear();
+     ss_y.range([height, 0]);
+     ss_y.domain([0, 100]);
+         
+     // variables to handle positioning of multiple y axes
+     var scale_number = 0;
+     var y_axis_offset = -70; // for subsequent axes
+     var y_axis_text_offset = -42;
+
+     // checkboxes to turn on/off tracks
+     var cov_check_box = document.getElementById('cov_check');
+     var ss_check_box = document.getElementById('ss_check');
+
+     // Plot coverage track
+     if (cov_check_box.checked)
+     {
+        // Add the coverage y-axis.
+        svg.append("g")
+            .attr("class", "cov y axis")
+            .attr("transform", "translate(" + (scale_number * y_axis_offset) +", 0)")
+            .call(d3.svg.axis().scale(cov_y).orient("left").ticks(0));
+
+        // coverage y-axis label
+        svg.append("text")
+        .attr("class", "cov y label")
+        .attr("text-anchor", "middle")
+        .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset))
+        .attr("x", 0 - (height / 2) )
+        // .attr("dy", "1em") // units of em shift text by size of current font
+        .attr("transform", "rotate(-90)")
+        .text("coverage");
+        scale_number++;
+
+        // this is the line for the coverage data
+        // var cov_lineFunction = d3.svg.line()
+        //   .x(function(d) { return nt_x(d.x); })
+        //   // since log scale 0 not allowed -> 0.1 will be below axis, therefore 0-like
+        //   .y(function(d) { if (d.coverage < 1) { return cov_y(1); } else { return cov_y(d.coverage); } });
+
+        // to fill under line, better to use an area than a filled line
+        var cov_lineFunction = d3.svg.area()
+           .x(function(d) { return nt_x(d.x); })
+           // since log scale 0 not allowed -> 0.1 will be below axis, therefore 0-like
+           .y0(cov_y(1))
+           .y1(function(d) { if (d.coverage < 1) { return cov_y(1); } else { return cov_y(d.coverage); } });
+
+        var cov_lineGraph = svg.append("g").append("path")
+                           .attr("d", cov_lineFunction(data))
+                           .attr("class", "cov_line");
+     }
+
+     // plot secondary structure (-dG) track
+     if (ss_check_box.checked)
+     {
+        // Add the secondary structure size y-axis.
+        svg.append("g")
+            .attr("class", "ss axis")
+            .attr("transform", "translate(" + (scale_number * y_axis_offset) +", 0)")
+            .attr("fill", "red")
+            .call(d3.svg.axis().scale(ss_y).orient("left").ticks(3));
+   
+        // secondary structure y-axis label
+        svg.append("text")
+        .attr("class", "ss y label")
+        .attr("text-anchor", "middle")
+        .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset + 10))
+        .attr("x", 0 - (height / 2) )
+        // .attr("dy", "1em") // units of em shift text by size of current font
+        .attr("fill", "red")
+        .attr("transform", "rotate(-90)")
+        .text("-∆G (kcal/mol)");
+
+        // secondary structure y-axis label
+        // svg.append("text")
+        // .attr("class", "ss y label")
+        // .attr("text-anchor", "middle")
+        // .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset)+12)
+        // .attr("x", 0 - (height / 2) )
+        // // .attr("dy", "1em") // units of em shift text by size of current font
+        // .attr("fill", "grey")
+        // .attr("transform", "rotate(-90)")
+        // .text("(∆G<50 grey)");
+
+        // this complicated business creates a "gradient" to color structure values above 50 red
+        // and those below 50 grey 
+        svg.append("linearGradient")
+         .attr("id", "energy-gradient")
+         .attr("gradientUnits", "userSpaceOnUse")
+         .attr("x1", 0).attr("y1", ss_y(0))
+         .attr("x2", 0).attr("y2", ss_y(100))
+        .selectAll("stop")
+         .data([
+           {offset: "0%", color: "darkslategray"},   // mess with these values to change gradient
+           {offset: "30%", color: "darkslategray"},
+           {offset: "70%", color: "red"},
+           {offset: "100%", color: "red"}
+         ])
+       .enter().append("stop")
+         .attr("offset", function(d) { return d.offset; })
+         .attr("stop-color", function(d) { return d.color; });
+   
+   
+        // this is the line for the secondary structure prediction data
+        var ss_lineFunction = d3.svg.line()
+           // .x(function(d) { if (d.x % 5) { return undefined; } else { return nt_x(d.x);}  })
+           .defined(function(d) { return d.secondary_structure != null; })
+           .x(function(d) { return nt_x(d.x);  })
+           .y(function(d) { return ss_y(d.secondary_structure);})
+           .interpolate("linear");
+   
+        // draw the 2˚ structure line
+        var ss_lineGraph = svg.append("g").append("path")
+                           .attr("d", ss_lineFunction(ss_data))
+                           .attr("class", "ss_line")
+                           .attr("stroke-width", 1)
+                           .attr("fill", "none");
+
+        // draw a scale for the gradient 
+        var ss_colorbar = svg.append("g").append("rect")
+                          .attr("class", "ss_box")
+                          .attr("width", 5)
+                          .attr("height", height)
+                          .attr("y", 0)
+                          .attr("x", (scale_number * y_axis_offset))
+
+     }  // end plot sec structure
+
+}; // end proess_tsv_for_plots 
+
+
+</script>

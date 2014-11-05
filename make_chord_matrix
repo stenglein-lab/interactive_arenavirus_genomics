@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+
+my $max = shift or die;
+
+print "var matrix_";
+print "$max";
+print " = [\n";
+
+my $max_i = $max;
+my $max_j = $max;
+
+for (my $i = 0; $i < $max_i; $i++)
+{
+   print "[";
+   for (my $j = 0; $j < $max_j; $j++)
+   {
+      print "1, ";
+   }
+   print "],\n";
+}
+print "];\n";
+

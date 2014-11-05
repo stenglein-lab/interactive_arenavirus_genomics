@@ -1,0 +1,204 @@
+#!/usr/bin/perl
+
+use strict;
+use Data::Dumper;
+use XML::Simple;
+
+my $usage = <<USAGE;
+  
+  this script parses a sequence-containing genbank format XML file
+  and outputs protein seqs for the orfs
+
+  assumes the standard genetic code
+
+  outputs fasta protein seqs to stdout
+
+  Mark Stenglein 2013.9.9
+
+  usage $0 <genbank_format_xml_file>
+
+USAGE
+
+my $xml_filename = shift or warn $usage and exit;
+
+my $xml = XMLin($xml_filename, ForceArray => 1);
+my $root = $xml->{INSDSeq};
+# warn Dumper $root;
+# exit;
+if (!defined $root)
+{
+   warn "error: improperly formated xml file: $xml_filename\n";
+   warn $usage and exit;
+}
+
+
+# header row
+print "segment\tstart\tstop\ttype\n";
+
+# iterate through annotations
+foreach my $locus (@$root)
+{
+   # all these weird hash keys are based on the NCBI Genbank XML format dtd
+   # and how XML::Simple creates a data structure based on the XML
+   my $locus_id = $locus->{INSDSeq_locus}[0];
+   my $seq = $locus->{INSDSeq_sequence}[0];
+   my $seq_length = length $seq;
+   # print a row saying how long the segment is
+   print "$locus_id\t1\t$seq_length\tS\n";
+   # to fasta
+   # warn ">$locus_id\n$seq\n";
+   # warn Dumper $locus; 
+   my $features = $locus->{'INSDSeq_feature-table'}[0]->{INSDFeature};
+   # warn Dumper $features;
+   foreach my $feature (@$features)
+   {
+      my $feature_key = $feature->{INSDFeature_key}[0];
+      my $type = "no_type_yet";
+      my $start = "0";
+      my $stop = "0";
+      # motif
+      # ORF
+      # CDS
+      # misc_feature
+      if (($feature_key eq 'ORF') or ($feature_key eq 'CDS') or ($feature_key eq 'misc_feature') or ($feature_key eq 'motif'))
+      {
+         my $feature_loc = $feature->{INSDFeature_location}[0];
+         # warn "$feature_loc\n";
+         if (!($feature_loc =~ /(\d+)\.\.(\d+)/))
+         {
+            die "error: couldn't parse coordinates from locus: $locus_id $feature_key $feature_loc\n";
+         }
+         else
+         {
+            $start = $1;
+            $stop = $2;
+            my $feature_length = $stop - $start + 1;
+            ## $start = $1 - 1; # -1 because array is zero indexed
+            ## $stop = $2 - 1 ;
+            my $rc = 0;
+            if ($feature_loc =~ /complement/)
+            {
+               $rc = 1;
+               # swap start and stop to indicate -strand
+               my $temp_start = $start;
+               $start = $stop;
+               $stop = $temp_start;
+            }
+
+
+            if ($feature_key eq 'ORF')
+            {
+               if ($seq_length > 4000)
+               {
+                  # L segment
+                  if ($feature_length > 1800) { $type = "L"; }
+                  elsif ((!$rc) && ($start <= 250) && ($feature_length >= 330) && ($feature_length <= 375)) { $type = "Z"; }
+                  # else { warn "$locus_id: $start: $feature_length\n"; }
+               }
+               else
+               {
+                  # S segment
+                  if (($rc) && ($feature_length > 1500)) { $type = "NP"; }
+                  elsif ((!$rc) && ($feature_length >= 1100) && ($feature_length <= 1500)) { $type = "GPC"; }
+                  # else { warn "$locus_id: $start: $feature_length\n"; }
+               }
+            }
+            elsif ($feature_key eq 'CDS')
+            {
+               my $feature_quals = $feature->{INSDFeature_quals}[0]->{INSDQualifier};
+               foreach my $qual (@{$feature_quals})
+               {
+                  my $qual_val = $qual->{INSDQualifier_value}[0];
+                  my $qual_name = $qual->{INSDQualifier_name}[0];
+                  if ($qual_name =~ "label")
+                  {
+                     if ($qual_val =~ /partial/)
+                     {
+                        if ($qual_val =~ /Z/)
+                        {
+                           $type = "PZ";
+                        }
+                        elsif ($qual_val =~ /L/)
+                        {
+                           $type = "PL";
+                        }
+                        elsif ($qual_val =~ /NP/)
+                        {
+                           $type = "PNP";
+                        }
+                        elsif ($qual_val =~ /GP/)
+                        {
+                           $type = "PGPC";
+                        }
+                        else
+                        {
+                           warn "error: couldn't parse CDS from xml (locus: $locus_id)\n";
+                        }
+                     }
+                  }
+               }
+            }
+            elsif ($feature_key eq 'misc_feature')
+            {
+               my $feature_quals = $feature->{INSDFeature_quals}[0]->{INSDQualifier};
+               # warn Dumper $feature_quals;
+               foreach my $qual (@{$feature_quals})
+               {
+                  # warn Dumper $qual;
+                  my $qual_val = $qual->{INSDQualifier_value}[0];
+                  # warn Dumper $qual_val;
+                  my $qual_name = $qual->{INSDQualifier_name}[0];
+                  # warn Dumper $qual_name;
+                  if ($qual_name =~ "label")
+                  {
+                     if ($qual_val =~ /rec/i)
+                     {
+                        $type = "RJ";
+                     }
+                  }
+               }
+            }
+            elsif ($feature_key eq 'motif')
+            {
+               my $feature_quals = $feature->{INSDFeature_quals}[0]->{INSDQualifier};
+               # warn Dumper $feature_quals;
+               foreach my $qual (@{$feature_quals})
+               {
+                  # warn Dumper $qual;
+                  my $qual_val = $qual->{INSDQualifier_value}[0];
+                  # warn Dumper $qual_val;
+                  my $qual_name = $qual->{INSDQualifier_name}[0];
+                  # warn Dumper $qual_name;
+                  if ($qual_name =~ "label")
+                  {
+                     if ($qual_val =~ /arena_end_19/)
+                     {
+                        $type = "E";
+                     }
+                     elsif ($qual_val =~ /arena_end/)
+                     {
+                        $type = "PE";
+                     }
+                  }
+               }
+            }
+         }
+         if ($type eq "no_type_yet") 
+         { 
+            #warn "warning: type undefined\n"; 
+         }
+         else
+         {
+            print "$locus_id\t$start\t$stop\t$type\n";
+         }
+      }
+   }
+
+}
+
+## foreach my $l (sort keys %lengths)
+## {
+   ## warn "$l\t$lengths{$l}\n";
+## }
+
+

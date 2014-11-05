@@ -1,0 +1,49 @@
+#!/usr/bin/perl
+
+use strict;
+
+my $ccf = shift or die;
+my $isf = shift or die;
+my $ssf = shift or die;
+
+open (my $cch, "<", $ccf) or die("no file: $ccf: $!");
+open (my $ish, "<", $isf) or die("no file: $isf: $!");
+open (my $ssh, "<", $ssf) or die("no file: $ssf: $!");
+
+my %hash = ();
+
+parse_tsv($cch, "coverage");
+parse_tsv($ish, "insert_size");
+parse_tsv($ssh, "secondary_structure");
+
+sub parse_tsv
+{
+   my $fh = shift @_ or die;
+   my $id = shift @_ or die;
+   while (<$fh>)
+   {
+      chomp;
+      my ($x, $y) = split;
+      $hash{$x}{$id} = $y;
+   }
+}
+
+# header
+print "x\tcoverage\tinsert_size\tsecondary_structure\n";
+
+# data rows
+foreach my $x (sort {$a <=> $b} keys %hash)
+{
+   print "$x\t$hash{$x}{coverage}\t";
+   if ($hash{$x}{insert_size})
+   {
+      printf "%d\t", $hash{$x}{insert_size};
+   }
+   else
+   {
+      print "0\t";
+   }
+   print "$hash{$x}{secondary_structure}\n";
+}
+
+

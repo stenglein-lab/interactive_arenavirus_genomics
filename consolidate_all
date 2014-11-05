@@ -1,0 +1,8 @@
+#!/bin/bash
+
+segs=(`cat segs.txt`)
+for seg in ${segs[@]}
+do
+   echo $seg
+   ./consolidate_one_seg $seg > ${seg}.tsv
+done

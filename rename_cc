@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+
+use strict;
+
+foreach my $arg (@ARGV)
+{
+   chomp;
+   my $id = undef;
+   my $seg = undef;
+   # warn "$_\n";
+   #  read1_10-48_tfpuah.fastq.10-48_S.paired.sam.10-48_S_cladeE_v1.cc
+   if ($arg =~ /read1_(\S+)_tfpuah/)
+   {
+      $id = $1;
+      # print "[ \"$1\",";
+   }
+   if ($arg =~ /sam\.(\S+)\.cc/)
+   {
+      $seg = $1;
+      # print " \"$1\"],";
+   }
+   print "cp read1*".$id."*".$seg.".cc ".$id.".".$seg.".tsv\n";
+
+}

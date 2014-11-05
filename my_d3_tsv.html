@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+ 
+body {
+  font: 10px sans-serif;
+}
+ 
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+ 
+.point {
+  fill: steelblue;
+  stroke: #000;
+}
+ 
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.js"></script>
+<script>
+
+var canvas_width = 800;
+
+ 
+// margins for drawing areas
+var margin = {top: 20, right: 20, bottom: 30, left: 40},
+    width = canvas_width - margin.left - margin.right;
+   
+// x-axis scaling for all plots and cartoons  -> domain units in nt
+var x_scale = d3.scale.linear();
+x_scale.domain([1, 8000]); // 8000 nt will be width of drawing area
+x_scale.range([0,width]);
+ 
+var snake_ids = [ "CAS02", "SII_A" ];
+
+// var number_snakes = 10;
+// for (snake_id = 1; snake_id <= number_snakes; snake_id++) 
+// { 
+   // render_snake(snake_id);
+// }
+
+var  snake_index;
+for (snake_index = 0; snake_index < snake_ids.length; snake_index++) 
+{
+   var snake_id = snake_ids[snake_index];
+   render_snake(snake_id);
+}
+
+function render_snake(snake_id)
+{
+   var header_text = "snake " + snake_id;
+   d3.select("body").append("p").text(header_text);
+   draw_all(snake_id);
+   return;
+}
+
+function draw_all(snake_id)
+{
+   draw_cartoon(snake_id);
+   return;
+}
+
+function draw_cartoon(snake_id)
+{
+   return;
+}
+
+function draw_plots(snake_id)
+{
+   draw_coverage(snake_id);
+}
+ 
+var margin = {top: 20, right: 20, bottom: 30, left: 40},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+ 
+// x axis scale 
+var x = d3.scale.linear()
+    .range([0, width]);
+ 
+// y axis scale 
+var y = d3.scale.linear()
+    .range([height, 0]);
+ 
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+ 
+d3.tsv("http://localhost:8888/data.tsv", function(data) {
+ 
+  // Coerce the data to numbers.
+  data.forEach(function(d) {
+    d.x = +d.x;
+    d.y = +d.y;
+  });
+ 
+  // Compute the scales’ domains.
+  // x.domain(d3.extent(data, function(d) { return d.x; })).nice();
+  x.domain(d3.extent(data, function(d) { return d.x; })).nice();
+  y.domain(d3.extent(data, function(d) { return d.y; })).nice();
+ 
+  // Add the x-axis.
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.svg.axis().scale(x).orient("bottom"));
+ 
+  // Add the y-axis.
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(d3.svg.axis().scale(y).orient("left"));
+ 
+  // Add the points!
+  svg.selectAll(".point")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "point")
+      // .attr("r", 4.5)
+      .attr("r", 1)
+      .attr("cx", function(d) { return x(d.x); })
+      .attr("cy", function(d) { return y(d.y); });
+});
+</script>

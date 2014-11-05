@@ -1,0 +1,48 @@
+1	San Francisco, CA
+2	San Francisco, CA
+3	San Francisco, CA
+4	San Francisco, CA
+5	San Francisco, CA
+6	Cordova, TN
+7	San Diego, CA
+8	Gainesville, FL
+9	Gainesville, FL
+10	Atlanta, GA
+11	Atlanta, GA
+12	Elliott?
+13	San Jose, CA
+14	San Jose, CA
+15	San Jose, CA
+16	Gainesville, FL
+17	Gainesville, FL
+18	San Diego, CA
+19	Atlanta, GA
+20	Mountlake Terrace, WA
+21	Mountlake Terrace, WA
+22	Davis, CA
+23	Davis, CA
+24	Atlanta, GA
+25	Valdosta, GA
+26	Elliott?
+27	San Jose, CA
+28	Atlanta, GA
+29	Atlanta, GA
+30	Atlanta, GA
+31	Atlanta, GA
+32	Vero Beach, FL
+33	CA, USA
+34	Elliott?
+35	San Jose, CA
+36	San Jose, CA
+37	Mountain Home, AR
+38	Monterey, CA
+39	Atlanta, GA
+40	Davis, CA
+41	Metairie, LA
+42	Metairie, LA
+43	Metairie, LA
+44	Metairie, LA
+45	Metairie, LA
+46	Davis, CA
+47	Davis, CA
+48	Davis, CA

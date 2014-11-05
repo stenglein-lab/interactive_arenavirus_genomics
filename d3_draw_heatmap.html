@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+ 
+body {
+  font: 10px helvetica;
+}
+ 
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.ss_box {
+  fill: url(#energy-gradient);
+  stroke: black;
+  stroke-width: 1;
+}
+ 
+</style>
+<body>
+
+<p> 
+   <form id="seg_filter_form">
+      Segments to display filter (leave empty to display all segments): 
+      <input type="text" id="seg_filter_input" name="seg_filter_input" />
+      <input type="button" value="Render" id="render_button" name="render_button"/>
+   </form>
+   <br> Tracks to display:
+   <br>
+   <br> coverage:     <input type="checkbox" id="cov_check" checked>
+   <br> concordance:  <input type="checkbox" id="ins_check" checked>
+   <br> 2˚ structure: <input type="checkbox" id="ss_check" checked>
+   <br>
+   <br> Refresh browser to clear page
+   <br>
+</p>
+
+<p style="page-break-after:always;"></p>
+
+<script src="./d3/d3.js"></script>
+
+<script>
+
+// main javascript/d3 for rendering heatmap 
+//
+// Mark Stenglein 8/1/2014
+
+
+// global vars related to svg plot size
+
+// margins for drawing areas
+var plot_margin = {top: 10, right: 10, bottom: 40, left: 240};
+var cartoon_margin = {top: 20, right: 10, bottom: 10, left: 240};
+var margin = plot_margin;
+
+// width of svg canvas
+var canvas_width = 600;
+var canvas_height = 1200;
+
+var svg_width = canvas_width - margin.left - margin.right;
+var svg_height = plot_canvas_height - margin.top - margin.bottom;
+
+// process input
+d3.select("#render_button").on("click", function() {
+
+  var filter_text = document.getElementById('seg_filter_input').value;
+  console.log("going to render segments with IDs matching : " + filter_text);
+  render_segments(filter_text);
+  });
+
+// code adapted from: http://bl.ocks.org/bewest/5075497
+var x = d3.scale.linear( )
+    .domain([0, 24])
+    .rangeRound([0, width])
+    ;
+
+var y = d3.scale.linear()
+    .domain([0, 420])
+    .rangeRound([height, 0]);
+
+var z = d3.scale.linear()
+    .domain([0, 160])
+    .range(["white", "purple"])
+    .interpolate(d3.interpolateLab);
+
+var formatTime = d3.time.format("%I %p"),
+    formatHour = function (d) {
+      if (d == 12) return "noon";
+      if (d == 24 || d == 0) return "midnight";
+      return formatTime(new Date(2013, 2, 9, d, 00));
+    };
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom")
+    .tickFormat(formatHour)
+    ;
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .tickFormat(d3.format("d"));
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+var tsv_file = "l_heatmap.tsv";
+
+d3.tsv(tsv_file, process_tsv);
+
+function process_tsv(data) {
+
+  // file will have 
+
+  var glucose = svg.selectAll(".glucose")
+      .data(data)
+    .enter( ).append("g")
+      .attr("class", "glucose")
+      ;
+  glucose.selectAll(".bin")
+      .data(function (d) { return d.values; })
+    .enter( ).append("rect")
+      .attr("class", "bin")
+      .attr("x", function (d, i) { return x(i); })
+      .attr("width", function (d, i) { return  x(i+1) - x(i); })
+      .style("fill", function(d) { return z(d); });
+  glucose.each(function (d) {
+    d3.select(this).selectAll(".bin")
+        .attr("y", y(d.key) )
+        .attr("height", 11 );
+  });
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis);
+} // end process_tsv
+
+
+</script>

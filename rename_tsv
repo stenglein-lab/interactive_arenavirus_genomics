@@ -1,0 +1,9 @@
+#!/bin/bash
+
+for file in `ls *clade*.tsv`
+do
+   old_name=${file/.tsv/}
+   new_name=`grep $old_name ../seg_map.txt | cut -f 2`
+   echo cp $file ${new_name}.tsv
+   cp $file ${new_name}.tsv
+done
