@@ -158,7 +158,8 @@ xxp {
       console.log ("seg id: " + segment_id);
 
       // parse names of recombinant segments from local text file
-      d3.text("http://localhost:8888/recombinant_segment_names.txt", function(error, parsed_text)
+      // d3.text("http://localhost:8888/recombinant_segment_names.txt", function(error, parsed_text)
+      d3.text("./recombinant_segment_names.txt", function(error, parsed_text)
       {
          if (error) return console.warn(error);
 
@@ -172,7 +173,7 @@ xxp {
       });
 
       // parse segment names from local text file
-      d3.text("http://localhost:8888/segment_names.txt", function(error, parsed_text)
+      d3.text("./segment_names.txt", function(error, parsed_text)
       {
          if (error) return console.warn(error);
 
