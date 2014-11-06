@@ -73,7 +73,8 @@ g.append("rect")
 // this is a hash of arrays mapping each city to list of snakes from there
 var city_snakes_map = {};
 
-d3.text("http://localhost:8888/snake_loc_map.txt", function(text) {
+// d3.text("http://localhost:8888/snake_loc_map.txt", function(text) {
+d3.text("./snake_loc_map.txt", function(text) {
   var data = d3.tsv.parseRows(text);
   data.forEach(function(d){
      var snake = d[0];
@@ -89,7 +90,8 @@ d3.text("http://localhost:8888/snake_loc_map.txt", function(text) {
 });
 
 // parse topoJSON format file containing geographical info about states and cities
-d3.json("http://localhost:8888/us-plus_snake_cities.json", function(error, us) {
+// d3.json("http://localhost:8888/us-plus_snake_cities.json", function(error, us) {
+d3.json("./us-plus_snake_cities.json", function(error, us) {
 
   // states
   g.append("g")

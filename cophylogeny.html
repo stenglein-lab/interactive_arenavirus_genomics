@@ -173,6 +173,7 @@ xxp {
       });
 
       // parse segment names from local text file
+      // d3.text("http://localhost:8888/segment_names.txt", function(error, parsed_text)
       d3.text("./segment_names.txt", function(error, parsed_text)
       {
          if (error) return console.warn(error);
@@ -244,13 +245,17 @@ xxp {
 
       if (segment_id === "S")
       {
-         var tree1_file = "http://localhost:8888/gp_tree.newick";
-         var tree2_file = "http://localhost:8888/np_tree.newick";
+         // var tree1_file = "http://localhost:8888/gp_tree.newick";
+         // var tree2_file = "http://localhost:8888/np_tree.newick";
+         var tree1_file = "./gp_tree.newick";
+         var tree2_file = "./np_tree.newick";
       }
       else
       {
-         var tree1_file = "http://localhost:8888/z_tree.newick";
-         var tree2_file = "http://localhost:8888/l_tree.newick";
+         // var tree1_file = "http://localhost:8888/z_tree.newick";
+         // var tree2_file = "http://localhost:8888/l_tree.newick";
+         var tree1_file = "./z_tree.newick";
+         var tree2_file = "./l_tree.newick";
       }
 
       // here, parse newick files, by async http requests

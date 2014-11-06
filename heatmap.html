@@ -78,7 +78,8 @@ var row_labels = [];
 // heatmap data, 
 var heatmap_data = [];
 
-d3.text("http://localhost:8888/l_heatmap_data.txt", function(text) {
+// d3.text("http://localhost:8888/l_heatmap_data.txt", function(text) {
+d3.text("./l_heatmap_data.txt", function(text) {
 
   var data = d3.tsv.parseRows(text);
   // row, col indexing will be 0 based 

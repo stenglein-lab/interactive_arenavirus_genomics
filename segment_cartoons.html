@@ -440,7 +440,8 @@ function draw_cartoon(segment_id)
  
     // file w/ annotation data
     var file_name = "210_seg_renamed.tsv"; // TODO - don't hardcode
-    var tsv_data_file = "http://localhost:8888/" + file_name;
+    // var tsv_data_file = "http://localhost:8888/" + file_name;
+    var tsv_data_file = "./" + file_name;
 
     // read file w/ annotation data
     d3.tsv(tsv_data_file, process_tsv);
@@ -767,7 +768,8 @@ function draw_plots(segment_id)
  
     var file_name = segment_id + ".tsv";
     // console.log ("opening " + file_name);
-    var tsv_data_file = "http://localhost:8888/" + file_name;
+    // var tsv_data_file = "http://localhost:8888/" + file_name;
+    var tsv_data_file = "./" + file_name;
 
     // read file w/ coverage data
     d3.tsv(tsv_data_file, process_tsv);
