@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.background {
+  fill: none;
+  pointer-events: all;
+}
+
+#states {
+  fill: #aaa;
+}
+
+#state-borders {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.place {
+  fill: #00F;
+}
+
+.place-highlighted {
+  fill: #F00;
+}
+
+.place-label {
+  fill: #000;
+  font: 12px helvetica;
+  -webkit-touch-callout: none; /* all this to prevent selecting / double-click highlighting text labels */
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var width = 960,
+    height = 500;
+
+var projection = d3.geo.albersUsa()
+    .scale(750)
+    .translate([width / 2, height / 2]);
+
+var path = d3.geo.path()
+    .projection(projection)
+	 .pointRadius(4);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var g = svg.append("g");
+
+g.append("rect")
+    .attr("class", "background")
+    .attr("width", width)
+    .attr("height", height)
+	 .on("click", fade_all); // clear highlighted cities if click anywhere else
+
+// this is a hash of arrays mapping each city to list of snakes from there
+var city_snakes_map = {};
+
+d3.text("http://localhost:8888/snake_loc_map.txt", function(text) {
+  var data = d3.tsv.parseRows(text);
+  data.forEach(function(d){
+     var snake = d[0];
+     var city = d[1];
+	  if (city_snakes_map[city] == null) {
+	     city_snakes_map[city] = [snake];
+	  }
+	  else {
+	     city_snakes_map[city].push(snake);
+	  }
+  });
+
+});
+
+// parse topoJSON format file containing geographical info about states and cities
+d3.json("http://localhost:8888/us-plus_snake_cities.json", function(error, us) {
+
+  // states
+  g.append("g")
+      .attr("id", "states")
+    .selectAll("path")
+      .data(topojson.feature(us, us.objects.states).features)
+    .enter().append("path")
+      .attr("d", path)   
+		.on("click", fade_all); // if click outside a city, clear all highlighting
+
+  // state borders
+  g.append("path")
+      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+      .attr("id", "state-borders")
+      .attr("d", path);
+
+  // cities
+  g.append("g")
+      .attr("id", "cities")
+    .selectAll("path")
+      .data(topojson.feature(us, us.objects.snake_cities).features)
+    .enter().append("path")
+		.attr("d", path)
+      .attr("id", function(d) { return "city-" + d.properties.name; })
+		.attr("class", "place") 
+     .on("click", toggle_highlight);
+     // .on("mouseover", toggle_highlight)
+     // .on("mouseout", toggle_highlight);
+
+  // city labels
+  g.selectAll(".place-label")
+      .data(topojson.feature(us, us.objects.snake_cities).features)
+    .enter().append("text")
+      .attr("class", "place-label")
+      .attr("transform", function(d) { return "translate(" + projection(d.geometry.coordinates) + ")"; })
+      .attr("dx", ".5em")
+      .attr("dy", ".35em")
+      .text(function(d) { return d.properties.name; });
+});
+
+function toggle_highlight(d) {
+
+   var currentClass = d3.select(this).attr("class");
+	// toggle color on click
+   if (currentClass === "place") {
+	   d3.select(this).attr("class", "place-highlighted");
+	   var city = d.properties.name;
+	   var snakes = city_snakes_map[city];
+	   console.log(city + " ---> " + snakes);
+   }
+	else {
+	   d3.select(this).attr("class", "place");
+   }
+}
+
+function fade_all() {
+	// clear all highlighting
+	d3.selectAll(".place-highlighted").attr("class", "place");
+}
+
+function highlight_by_ids(ids) {
+}
+
+</script>
