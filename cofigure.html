@@ -1,10 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<style>
-   body,html,.col-md-6 {
-      height:100%;
-   }
-</style>
 <head>
    <!-- boostrap -->
    <!-- Latest compiled and minified CSS -->
@@ -13,14 +8,60 @@
    <!-- Optional theme -->
    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
 
+   <!-- Styles for map graphic -->
+   <link rel="stylesheet" href="./map.css">
+
    <!-- Latest compiled and minified JavaScript -->
    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script> -->
 
    <meta name="viewport" content="width=device-width, initial-scale=1">
 
 </head>
+<style>
+   body,html {
+      height:100%;
+   }
+
+	pre {
+	   font-size: 8pt;
+	}
+</style>
 <body>
 
+<!-- <script src="./d3/d3.min.js"></script> -->
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="./fasta.js"></script>
+<script src="./map.js"></script>
+
+<script>
+
+var highlighted_segments = ['snake22_L10', 'snake29_S6'];
+
+function clear(selector)
+{
+	var myNode = document.getElementById(selector);
+	while (myNode.firstChild) {
+	    myNode.removeChild(myNode.firstChild);
+	}
+}
+
+function update_right_map()
+{
+	var right_div = d3.select("#right_container");
+	// clear(right_div);
+	clear("right_container");
+	map.render("#right_container");
+}
+
+function update_right_fasta()
+{
+	var right_div = d3.select("#right_container");
+	clear("right_container");
+	fasta.render("#right_container");
+}
+
+</script>
 
 <div class="container-fluid">
    <div class="row">
@@ -36,7 +77,7 @@
 <div class="container-fluid">
    <div class="row">
       <div class="col-md-6">
-         <div class="btn-group">
+         <div class="btn-group" id="left_button-group">
             <button type="button" class="btn btn-default">Default 1</button>
             <button type="button" class="btn btn-default">Default 2</button>
             <button type="button" class="btn btn-default">Default 3</button>
@@ -45,9 +86,9 @@
          </div >
       </div >
       <div class="col-md-6">
-         <div class="btn-group">
-            <button type="button" class="btn btn-primary">Primary 1</button>
-            <button type="button" class="btn btn-default">Default 2</button>
+         <div class="btn-group" id="right_button_group">
+            <button type="button" class="btn btn-default" onclick="update_right_fasta();"> Fasta</button>
+            <button type="button" class="btn btn-default" onclick="update_right_map();">Map</button>
             <button type="button" class="btn btn-default">Default 3</button>
             <button type="button" class="btn btn-default">Default 4</button>
             <button type="button" class="btn btn-default">Default 5</button>
@@ -58,11 +99,26 @@
 
 <div class="container-fluid">
    <div class="row">
-      <div class="col-md-6"">
-         <iframe src='heatmap.html' id="info1" class="iframe" name='info' width="100%" height="100%" seamless="seamless" align="left" frameborder="0"></iframe>
+      <div class="col-md-6" id="left_container">
+		   
+            <!-- <iframe src='./heatmap.html' id="info1" class="iframe" name='info' width="100%" height="100%" seamless="seamless" align="left" frameborder="0"></iframe> -->
+				<!--
+				<svg width="100%" height="500">
+               <rect width="100%" height="100%" fill="lightblue" />
+               <rect width="100%" height="100%" fill="lightblue" />
+				</svg>
+				-->
       </div >
-      <div class="col-md-6"">
-         <iframe src='cophylogeny.html' id="info2" class="iframe" name='info' width="100%" height="100%" seamless="seamless" align="left" frameborder="0"></iframe>
+      <div class="col-md-6" id="right_container">
+				<!--
+            <iframe src='./cophylogeny.html' id="info2" class="iframe" name='info' width="100%" height="100%" seamless="seamless" align="left" frameborder="0"></iframe>
+				<pre>
+&gtfasta_record
+ACGCTACACACACCACCACA
+&gtfasta_record_2
+ACGCTACACACACCACCACACACACACAC
+				</pre>
+				-->
       </div >
    </div>
 </div>
