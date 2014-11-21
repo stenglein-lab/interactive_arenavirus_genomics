@@ -1,4 +1,8 @@
-/* map.js */
+/* 
+
+map.js 
+
+*/
 
 (function() {
 

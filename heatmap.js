@@ -1,9 +1,19 @@
-<script>
+/* heatmap.js */
 
-var width = 960,
-    height = 500;
+(function() {
 
-var svg = d3.select("body").append("svg")
+heatmap = {};
+
+
+heatmap.render = function(selector){
+
+var sel = d3.select(selector);
+var width = sel.style("width");
+var width = parseInt(width);
+// TODO: what height to use?
+var height = 500;
+
+var svg = sel.append("svg")
     .attr("width", width)
     .attr("height", height);
 
@@ -15,9 +25,6 @@ g.append("rect")
     .attr("width", width)
     .attr("height", height)
 	 .on("click", fade_all); // clear highlighted cities if click anywhere else
-
-// this is a hash of arrays mapping each city to list of snakes from there
-var city_snakes_map = {};
 
 // column labels
 var column_labels = [];
@@ -100,64 +107,7 @@ function render_heatmap()
               .attr("height", cell_height)
               .style("fill", function(d) { return colorScale(d.value); });
 }
-
-//// parse topoJSON format file containing geographical info about states and cities
-//d3.json("http://localhost:8888/us-plus_snake_cities.json", function(error, us) {
-//
-//  // states
-//  g.append("g")
-//      .attr("id", "states")
-//    .selectAll("path")
-//      .data(topojson.feature(us, us.objects.states).features)
-//    .enter().append("path")
-//      .attr("d", path)   
-//		.on("click", fade_all); // if click outside a city, clear all highlighting
-//
-//  // state borders
-//  g.append("path")
-//      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
-//      .attr("id", "state-borders")
-//      .attr("d", path);
-//
-//  // cities
-//  g.append("g")
-//      .attr("id", "cities")
-//    .selectAll("path")
-//      .data(topojson.feature(us, us.objects.snake_cities).features)
-//    .enter().append("path")
-//		.attr("d", path)
-//      .attr("id", function(d) { return "city-" + d.properties.name; })
-//		.attr("class", "place") 
-//     .on("click", toggle_highlight);
-//     // .on("mouseover", toggle_highlight)
-//     // .on("mouseout", toggle_highlight);
-//
-//  // city labels
-//  g.selectAll(".place-label")
-//      .data(topojson.feature(us, us.objects.snake_cities).features)
-//    .enter().append("text")
-//      .attr("class", "place-label")
-//      .attr("transform", function(d) { return "translate(" + projection(d.geometry.coordinates) + ")"; })
-//      .attr("dx", ".5em")
-//      .attr("dy", ".35em")
-//      .text(function(d) { return d.properties.name; });
-//});
-//
-//function toggle_highlight(d) {
-//
-//   var currentClass = d3.select(this).attr("class");
-//	// toggle color on click
-//   if (currentClass === "place") {
-//	   d3.select(this).attr("class", "place-highlighted");
-//	   var city = d.properties.name;
-//	   var snakes = city_snakes_map[city];
-//	   console.log(city + " ---> " + snakes);
-//   }
-//	else {
-//	   d3.select(this).attr("class", "place");
-//   }
-//}
-
+} // end heatmap.render
 
 function fade_all() {
    // clear all highlighting
@@ -165,7 +115,5 @@ function fade_all() {
 }
 
 
-//function highlight_by_ids(ids) {
-//}
 
-</script>
+}());

@@ -34,7 +34,6 @@
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="http://d3js.org/topojson.v1.min.js"></script>
 <script src="./Newick.js"></script>
-<script src="./heatmap.js"></script>
 <script src="./fasta.js"></script>
 <script src="./map.js"></script>
 <script src="./cophylogeny.js"></script>
@@ -52,32 +51,29 @@ function clear(selector)
 	}
 }
 
-function render_heatmap(container_id)
-{
-	console.log("rendering heatmap in container: " + container_id);
-	clear(container_id);
-	heatmap.render(container_id);
-}
-
 function render_map(container_id)
 {
 	clear(container_id);
 	map.render(container_id);
+	return false;
 }
 
 function render_fasta(container_id)
 {
 	clear(container_id);
 	fasta.render(container_id);
+	return false;
 }
 
 function render_cophylogeny_S(container_id)
 {
   render_cophylogeny(container_id, "S");
+  return false;
 }
 function render_cophylogeny_L(container_id)
 {
   render_cophylogeny(container_id, "L");
+  return false;
 }
 
 function render_cophylogeny(container_id, segment_id)
@@ -103,6 +99,7 @@ function render_cophylogeny(container_id, segment_id)
    }
 	clear(container_id);
 	cophylogeny.render(container_id, newick_file_1, newick_file_2, w, h);
+	return false;
 }
 
 function load()
@@ -132,7 +129,6 @@ function setup_event_handlers()
 			sel.on("click", btn_func);
 		});
 	});
-
 }
   
 
@@ -152,28 +148,18 @@ function setup_event_handlers()
 
 <div class="container-fluid">
    <div class="row">
-
       <div class="col-md-6">
          <div class="btn-group" id="left_button-group">
-            <button type="button" id="left_heatmap" class="btn btn-default">Heatmap </button>
-            <button type="button" id="left_fasta"   class="btn btn-default">Fasta   </button>
-            <button type="button" id="left_map"     class="btn btn-default">Map     </button>
-            <div class="btn-group">
-                <button type="button" data-toggle="dropdown" class="btn btn-default dropdown-toggle">
-                    Co-phylogeny
-                    <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu">
-                  <li> <a href="javascript:void(0);" id="left_cophylogeny_S">S segment (GPC/NP)</a></li>
-                  <li> <a href="javascript:void(0);" id="left_cophylogeny_L">L segment (Z/L)   </a></li>
-                </ul>
-				</div> 
-         </div > 
-      </div > 
+            <button type="button" class="btn btn-default">Default 1</button>
+            <button type="button" class="btn btn-default">Default 2</button>
+            <button type="button" class="btn btn-default">Default 3</button>
+            <button type="button" class="btn btn-default">Default 4</button>
+            <button type="button" class="btn btn-default">Default 5</button>
+         </div >
+      </div >
 
       <div class="col-md-6">
-         <div class="btn-group" id="right_button_group">
-            <button type="button" id="right_heatmap" class="btn btn-default">Heatmap</button>
+         <div class="btn-group" >
             <button type="button" id="right_fasta" class="btn btn-default">Fasta</button>
             <button type="button" id="right_map"   class="btn btn-default">Map</button>
             <div class="btn-group">
@@ -182,19 +168,13 @@ function setup_event_handlers()
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                  <li> <a href="javascript:void(0);" id="right_cophylogeny_S">S segment (GPC/NP)</a></li>
-                  <li> <a href="javascript:void(0);" id="right_cophylogeny_L">L segment (Z/L)   </a></li>
+                  <li> <a href="#" id="right_cophylogeny_S">S segment (GPC/NP)</li>
+                  <li> <a href="#" id="right_cophylogeny_L">L segment (Z/L)   </li>
                 </ul>
-				</div> 
-         </div > 
-      </div > 
-
-   </div> 
-</div> 
-
-<!-- spacer -->
-<div class="container-fluid">
-<p></p>
+				</div>
+         </div >
+      </div >
+   </div>
 </div>
 
 <!-- empty containers to be populated by various figs -->

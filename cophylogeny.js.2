@@ -16,6 +16,7 @@ cophylogeny = {};
 //  zoomable
 //  scale bars
 
+
 // glocal variables
 // margins for svg drawing area
 var margin = { top: 20, right: 20, bottom: 20, left: 20 };
@@ -28,7 +29,6 @@ var newick_string_1, newick_string_2; // these will hold plain text newick trees
 // variables for svg canvas and groups
 var overall_vis;
 var tree1_g, tree2_g, bridge_g;
-var tree1_name, tree2_name;
 
 // svg is the svg element upon which to draw the cophylogeny
 cophylogeny.render = function(selector, newick_file_1, newick_file_2, width, height)
@@ -39,6 +39,9 @@ cophylogeny.render = function(selector, newick_file_1, newick_file_2, width, hei
 
    svg_h = h - margin.top - margin.bottom;
    svg_w = w - margin.left - margin.right;
+
+	console.log ("svg_w: " + svg_w);
+	console.log ("svg_h: " + svg_h);
 
    // create an SVG canvas area
    overall_vis = sel.append("svg")
@@ -52,12 +55,6 @@ cophylogeny.render = function(selector, newick_file_1, newick_file_2, width, hei
      .attr("width", svg_w)
      .attr("height", svg_h)
 	  .on("click", fade_all);
-
-   // determine tree names for labeling
-	// use everything before first "."
-	tree1_name = newick_file_1.match(/\w+/)[0].toUpperCase();
-	tree2_name = newick_file_2.match(/\w+/)[0].toUpperCase();
-	// console.log ("nf1: " + newick_file_1 + "t1n: " + tree1_name);
 
    // here, parse newick files, by async http requests
    var remaining = 2; // necessary b/c requests are asynchronous
@@ -93,8 +90,11 @@ function parse_newick_strings()
 // this function renders the 2 trees
 function render_trees(newick_1, newick_2)
 {
+   // parse plain text newick format trees and convert to tree data structures
+   // var newick_1 = Newick.parse(newick_string_1);
+   // var newick_2 = Newick.parse(newick_string_2);
 
-	// console.log("rendering trees");
+	console.log("rendering trees");
 
    // several functions copied from:
    // from: https://gist.github.com/kueda/1036776
@@ -216,6 +216,9 @@ function render_trees(newick_1, newick_2)
 
    function get_segment_node_pair(segment_id, nodes_1, nodes_2)
    {
+		console.log("segment_id: " + segment_id);
+		console.dir( nodes_1);
+		console.dir( nodes_2);
       function match_filter(n)
       {
          if (n.name === segment_id)
@@ -261,35 +264,6 @@ function render_trees(newick_1, newick_2)
    .attr("transform", "translate(" + margin.left + ", " + margin.top + ")") ;
    bridge_g = overall_vis.append("g")
    .attr("transform", "translate(" + margin.left + ", " + margin.top + ")") ;
-
-   // add labels 
-	tree1_g.append("text")
-	.attr("class", "tree_label")
-	.attr("x", 0)
-	.attr("y", 0)
-	.text(tree1_name);
-
-	// tree1_g.append("text")
-	// .attr("class", "tree_label")
-	// .attr("x", 0)
-	// .attr("y", 15)
-	// .text("Phylogeny");
-
-	tree2_g.append("text")
-	.attr("class", "tree_label")
-	.attr("x", svg_w - margin.left - margin.right)
-	.attr("y", 0)
-	.style("text-anchor", "end")
-	.text(tree2_name);
-
-	// tree2_g.append("text")
-	// .attr("class", "tree_label")
-	// .attr("x", svg_w - margin.left - margin.right)
-	// .attr("y", 15)
-	// .style("text-anchor", "end")
-	// .text("Phylogeny");
-
-
 
    // a fxn to create right angled edges connecting nodes
    var diagonal = rightAngleDiagonal();
@@ -362,6 +336,7 @@ function render_trees(newick_1, newick_2)
    {
       if (n.children) { return false; }
       var seg_id = n.name;
+		console.log("seg_id: " + seg_id);
       var seg_pair = get_segment_node_pair(seg_id, tree1_nodes, tree2_nodes);
       var x1 = seg_pair[0].x;
       var y1 = seg_pair[0].y + 40; // to get past text. NB x,y flipped in d3.layout.cluster
@@ -395,6 +370,7 @@ function render_trees(newick_1, newick_2)
 // inspired by: http://bl.ocks.org/mbostock/4062006
 function fade_all()
 {
+	console.log("turning off the lights");
    bridge_g.selectAll(".bridge-highlighted")
       .transition()
       .duration(250)
