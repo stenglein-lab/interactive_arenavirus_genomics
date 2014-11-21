@@ -15,6 +15,8 @@
    <!-- Styles for figure graphics -->
    <link rel="stylesheet" href="./map.css">
    <link rel="stylesheet" href="./cophylogeny.css">
+   <link rel="stylesheet" href="./plots.css">
+   <link rel="stylesheet" href="./heatmap.css">
 
    <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -35,6 +37,7 @@
 <script src="http://d3js.org/topojson.v1.min.js"></script>
 <script src="./Newick.js"></script>
 <script src="./heatmap.js"></script>
+<script src="./plots.js"></script>
 <script src="./fasta.js"></script>
 <script src="./map.js"></script>
 <script src="./cophylogeny.js"></script>
@@ -52,6 +55,13 @@ function clear(selector)
 	}
 }
 
+function render_plots(container_id)
+{
+	console.log("rendering plots in container: " + container_id);
+	clear(container_id);
+	plots.render(container_id);
+}
+
 function render_heatmap(container_id)
 {
 	console.log("rendering heatmap in container: " + container_id);
@@ -67,6 +77,7 @@ function render_map(container_id)
 
 function render_fasta(container_id)
 {
+	console.log("rendering fasta in container: " + container_id);
 	clear(container_id);
 	fasta.render(container_id);
 }
@@ -113,8 +124,8 @@ function load()
 // setup event handlers to call appropriate functions when buttons pressed
 function setup_event_handlers()
 {
-	var buttons = { left:  ["heatmap", "cophylogeny_S", "cophylogeny_L", "map"],
-	                right: ["heatmap", "cophylogeny_S", "cophylogeny_L", "map", "fasta"] };
+	var buttons = { left:  ["heatmap", "plots", "cophylogeny_S", "cophylogeny_L", "map", "fasta"],
+	                right: ["heatmap", "plots", "cophylogeny_S", "cophylogeny_L", "map", "fasta"] };
 
 	var sides = ["left", "right"];
 
@@ -132,7 +143,6 @@ function setup_event_handlers()
 			sel.on("click", btn_func);
 		});
 	});
-
 }
   
 
@@ -156,6 +166,7 @@ function setup_event_handlers()
       <div class="col-md-6">
          <div class="btn-group" id="left_button-group">
             <button type="button" id="left_heatmap" class="btn btn-default">Heatmap </button>
+            <button type="button" id="left_plots"   class="btn btn-default">Plots</button>
             <button type="button" id="left_fasta"   class="btn btn-default">Fasta   </button>
             <button type="button" id="left_map"     class="btn btn-default">Map     </button>
             <div class="btn-group">
@@ -174,8 +185,9 @@ function setup_event_handlers()
       <div class="col-md-6">
          <div class="btn-group" id="right_button_group">
             <button type="button" id="right_heatmap" class="btn btn-default">Heatmap</button>
-            <button type="button" id="right_fasta" class="btn btn-default">Fasta</button>
-            <button type="button" id="right_map"   class="btn btn-default">Map</button>
+            <button type="button" id="right_plots"   class="btn btn-default">Plots</button>
+            <button type="button" id="right_fasta"   class="btn btn-default">Fasta</button>
+            <button type="button" id="right_map"     class="btn btn-default">Map</button>
             <div class="btn-group">
                 <button type="button" data-toggle="dropdown" class="btn btn-default dropdown-toggle">
                     Co-phylogeny
