@@ -200,17 +200,28 @@ function highlight_by_col() {
       var col = d3.select(this);
       var col_id = col.attr("id");
       var col_class = col.attr("class");
-      console.log ("highlighting column (id): " + col_id);
-      console.log ("highlighting column (class): " + col_class);
-		var cells_to_select_classes=".cell." + col_id.replace(/ /g,".");
-      console.log ("highlighting column (classes): " + cells_to_select_classes);
-
-		// var all_cells = d3.selectAll(".cell"); 
+		var cells_to_select_classes="." + col_id.replace(/ /g,".");
 		var all_cells = d3.selectAll(cells_to_select_classes); 
-      console.log ("cells_to_hightlight: " + all_cells);
-		all_cells.style("stroke", "#000").style("stroke-width", "0.5px");
+		all_cells.each(highlight_toggle);
    }
 }
+
+function highlight_toggle()
+{
+   var currentClass = d3.select(this).attr("class");
+
+	console.log ("currentClass: " + currentClass);
+
+   if (currentClass.match("cell-highlighted")) {
+      currentClass = currentClass.replace("cell-highlighted", "cell");
+      d3.select(this).attr("class", currentClass);
+   }
+   else {
+		currentClass = currentClass.replace("cell", "cell-highlighted");
+      d3.select(this).attr("class", currentClass);
+   }
+}
+
 
 function fade_all() {
    // clear all highlighting

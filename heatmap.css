@@ -22,7 +22,7 @@
 
 .cell-highlighted {
   fill: white;
-  stroke: #000;
+  stroke: #ccc;
   stroke-width: 0.5px;
 }
 
