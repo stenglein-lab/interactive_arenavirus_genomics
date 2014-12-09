@@ -1,98 +1,12 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
-<style>
- 
-body {
-  font: 14px helvetica;
-}
-p {
-  margin-top: 6px;
-  margin-bottom: 4px;
-}
-
-.header_p {
-  font: 14px helvetica;
-}
- 
-.axis path, .axis line {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
- 
-.point {
-  fill: steelblue;
-  stroke: #000;
-}
-
-.cov_line_blue {
-  fill: lightsteelblue;
-  stroke: black;
-  stroke-width: 1;
-}
-
-.cov_line {
-  fill: #E8E8E8;
-  stroke: black;
-  stroke-width: 1;
-}
-
-.ss_line {
-  fill: none;
-  stroke: url(#energy-gradient);
-  stroke-width: 1;
-}
-
-.ss_box {
-  fill: url(#energy-gradient);
-  stroke: black;
-  stroke-width: 1;
-}
-
-.axis tspan {
-  font-size: 10px;
-}
-
-@media print
-{    
-   .no-print, .no-print *
-   {
-   display: none !important;
-   }
-}
- 
-</style>
-<body>
-
-<div class='no-print'>
-<p> 
-   <form id="seg_filter_form">
-      Segments to display filter (leave empty to display all segments): 
-      <input type="text" id="seg_filter_input" name="seg_filter_input" />
-      <input type="button" value="Render" id="render_button" name="render_button"/>
-   </form>
-   <br>
-   <form id="clear_form">
-      <input type="button" value="Clear Display" id="clear_button" name="clear_button"/>
-   </form>
-   <br> Tracks to display:
-   <br>
-   <br> coverage:     <input type="checkbox" id="cov_check" checked>
-   <br> 2˚ structure: <input type="checkbox" id="ss_check" checked>
-   <br>
-   <br>
-</p>
-
-<!-- <p style="page-break-after:always;"></p> -->
-</div>
-
-<script src="http://d3js.org/d3.v3.min.js"></script>
-
-<script>
-
 // main javascript/d3 for rendering cartoons and plots
 // 
 // Mark Stenglein 8/1/2014
+
+/* segment_cartoons.js */
+
+(function () {
+
+plots = {};
 
 var segments_all = [ 
 ["snake1_L1"],
@@ -315,8 +229,17 @@ var plot_margin = {top: 10, right: 40, bottom: 40, left: 50};
 var cartoon_margin = {top: 20, right: 40, bottom: 10, left: 50};
 var margin = plot_margin;
 
+plots.render = function(selector)
+{
+
+var sel = d3.select(selector);
+var drawing_area = sel;
+var width = sel.style("width");
+var width = parseInt(width);
+
+
 // svg canvas width for everything
-var svg_width = 1000 - margin.left - margin.right;
+var svg_width = width - margin.left - margin.right;
    
 // y-axis scaling 
 // how tall plots will be in pixels
@@ -327,50 +250,11 @@ var svg_height = plot_canvas_height - margin.top - margin.bottom;
 var segment_count = 0;
 var segments_per_page = 6;
 
-// process input
-d3.select("#render_button").on("click", function() {
-
-  var filter_text = document.getElementById('seg_filter_input').value;
-  console.log("going to render segments with IDs matching : " + filter_text);
-  render_segments(filter_text);
-  });
-
-function clear_displayed_elements()
-{
-  console.log("clearing display...");
-  d3.select("body").selectAll("svg").remove();
-  d3.select("body").selectAll(".header_p").remove();
-}
-
-// refresh
-d3.select("#clear_button").on("click", clear_displayed_elements);
-
-// access this page's query string to get filter 
-// snippet copied from: http://css-tricks.com/snippets/javascript/get-url-variables/
-function getQueryVariable(variable)
-{
-   var query = window.location.search.substring(1);
-   var vars = query.split("&");
-   for (var i=0;i<vars.length;i++) 
-   {
-      var pair = vars[i].split("=");
-      if(pair[0] == variable){return pair[1];}
-   }
-   return(false);
-}
-
-// render segments based on URL query string
-if (query_string_filter = getQueryVariable("seg_filter_input"))
-{
-  render_segments(query_string_filter);
-}
+render_segments();
 
 // render some or all segments
 function render_segments(segment_filter)
 {
-   // clear display 1st
-   clear_displayed_elements();
-
    // figure out which segments to display
    var segments = null;
    if (segment_filter)
@@ -399,8 +283,8 @@ function render_segments(segment_filter)
       // if ((segment_count === 5) || (segment_count % segments_per_page) == 0)
       if ((segment_count % segments_per_page) === 0)
       {
-         console.log("segment " + segment_id + " #: " + segment_count);
-         var pb_p = d3.select("body").append("p").style("page-break-after", "always").style("text-align", "right");
+         // console.log("segment " + segment_id + " #: " + segment_count);
+         var pb_p = drawing_area.append("p").style("page-break-after", "always").style("text-align", "right");
          var page_number = "page " + (segment_count / segments_per_page);
          // uncomment to add page #s to bottom of page
          // pb_p.text( page_number );
@@ -411,7 +295,7 @@ function render_segments(segment_filter)
 function render_segment(segment_id)
 {
    var header_text = "segment " + segment_id;
-   d3.select("body").append("p").text(header_text).attr("class", "header_p")
+   drawing_area.append("p").text(header_text).attr("class", "header_p")
    draw_all(segment_id);
    return;
 }
@@ -426,13 +310,13 @@ function draw_all(segment_id)
 // draw cartoons of segments showing ORFS and other annotations
 function draw_cartoon(segment_id)
 {
-   console.log ("drawing genome cartoon for segment " + segment_id  );
+   // console.log ("drawing genome cartoon for segment " + segment_id  );
    
    var width = svg_width;
-   var height = 40; // don't hardcode
+   var height = 40; // TODO: don't hardcode (or is OK?)
 
    // add a new svg canvas area
-   var svg = d3.select("body").append("svg")
+   var svg = drawing_area.append("svg")
     .attr("width", width + cartoon_margin.left + cartoon_margin.right)
     .attr("height", height + cartoon_margin.top + cartoon_margin.bottom ) 
     .append("g")
@@ -440,6 +324,7 @@ function draw_cartoon(segment_id)
  
     // file w/ annotation data
     var file_name = "210_seg_renamed.tsv"; // TODO - don't hardcode
+    // var tsv_data_file = "http://localhost:8888/" + file_name;
     var tsv_data_file = "./" + file_name;
 
     // read file w/ annotation data
@@ -753,13 +638,13 @@ function draw_cartoon(segment_id)
 // draw plots (tracks) for a segment
 function draw_plots(segment_id)
 {
-   console.log ("drawing plots for segment " + segment_id  );
+   // console.log ("drawing plots for segment " + segment_id  );
    
    var width = svg_width;
    var height = svg_height;
 
    // add a new svg canvas area
-   var svg = d3.select("body").append("svg")
+   var svg = drawing_area.append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
@@ -767,6 +652,7 @@ function draw_plots(segment_id)
  
     var file_name = segment_id + ".tsv";
     // console.log ("opening " + file_name);
+    // var tsv_data_file = "http://localhost:8888/" + file_name;
     var tsv_data_file = "./" + file_name;
 
     // read file w/ coverage data
@@ -875,136 +761,120 @@ function draw_plots(segment_id)
      var ss_check_box = document.getElementById('ss_check');
 
      // Plot coverage track
-     if (cov_check_box.checked)
-     {
-        // Add the coverage y-axis.
-        svg.append("g")
-            .attr("class", "cov y axis")
-            .attr("transform", "translate(" + (scale_number * y_axis_offset) +", 0)")
-            .call(d3.svg.axis().scale(cov_y).orient("left").ticks(0))
-            .selectAll(".tick text")
-              .text(null)
-            .filter(powerOfTen)
-              .text(10)
-            .append("tspan")
-              .attr("dy", "-.7em")
-              .text(function(d) { return Math.round(Math.log(d) / Math.LN10); });
+     // Add the coverage y-axis.
+     svg.append("g")
+         .attr("class", "cov y axis")
+         .attr("transform", "translate(" + (scale_number * y_axis_offset) +", 0)")
+         .call(d3.svg.axis().scale(cov_y).orient("left").ticks(0))
+         .selectAll(".tick text")
+           .text(null)
+         .filter(powerOfTen)
+           .text(10)
+         .append("tspan")
+           .attr("dy", "-.7em")
+           .text(function(d) { return Math.round(Math.log(d) / Math.LN10); });
 
-         function powerOfTen(d) 
-         {
-           return d / Math.pow(10, Math.ceil(Math.log(d) / Math.LN10 - 1e-12)) === 1;
-         }
+      function powerOfTen(d) 
+      {
+        return d / Math.pow(10, Math.ceil(Math.log(d) / Math.LN10 - 1e-12)) === 1;
+      }
 
-        // coverage y-axis label
-        svg.append("text")
-        .attr("class", "cov y label")
-        .attr("text-anchor", "middle")
-        .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset))
-        .attr("x", 0 - (height / 2) )
-        // .attr("dy", "1em") // units of em shift text by size of current font
-        .attr("transform", "rotate(-90)")
-        .text("coverage");
+     // coverage y-axis label
+     svg.append("text")
+     .attr("class", "cov y label")
+     .attr("text-anchor", "middle")
+     .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset))
+     .attr("x", 0 - (height / 2) )
+     // .attr("dy", "1em") // units of em shift text by size of current font
+     .attr("transform", "rotate(-90)")
+     .text("coverage");
 
-        scale_number++;
+     scale_number++;
 
-        // this is the line for the coverage data
-        // var cov_lineFunction = d3.svg.line()
-        //   .x(function(d) { return nt_x(d.x); })
-        //   // since log scale 0 not allowed -> 0.1 will be below axis, therefore 0-like
-        //   .y(function(d) { if (d.coverage < 1) { return cov_y(1); } else { return cov_y(d.coverage); } });
+     // this is the line for the coverage data
+     // var cov_lineFunction = d3.svg.line()
+     //   .x(function(d) { return nt_x(d.x); })
+     //   // since log scale 0 not allowed -> 0.1 will be below axis, therefore 0-like
+     //   .y(function(d) { if (d.coverage < 1) { return cov_y(1); } else { return cov_y(d.coverage); } });
 
-        // to fill under line, better to use an area than a filled line
-        var cov_lineFunction = d3.svg.area()
-           .x(function(d) { return nt_x(d.x); })
-           // since log scale 0 not allowed -> 0.1 will be below axis, therefore 0-like
-           .y0(cov_y(1))
-           .y1(function(d) { if (d.coverage < 1) { return cov_y(1); } else { return cov_y(d.coverage); } });
+     // to fill under line, better to use an area than a filled line
+     var cov_lineFunction = d3.svg.area()
+        .x(function(d) { return nt_x(d.x); })
+        // since log scale 0 not allowed -> 0.1 will be below axis, therefore 0-like
+        .y0(cov_y(1))
+        .y1(function(d) { if (d.coverage < 1) { return cov_y(1); } else { return cov_y(d.coverage); } });
 
-        var cov_lineGraph = svg.append("g").append("path")
-                           .attr("d", cov_lineFunction(data))
-                           .attr("class", "cov_line");
-     }
+     var cov_lineGraph = svg.append("g").append("path")
+                        .attr("d", cov_lineFunction(data))
+                        .attr("class", "cov_line");
 
      // plot secondary structure (-dG) track
-     if (ss_check_box.checked)
-     {
-        // Add the secondary structure size y-axis.
-        svg.append("g")
-            .attr("class", "ss axis")
-            // .attr("transform", "translate(" + (scale_number * y_axis_offset) +", 0)")   // left axis
-            .attr("transform", "translate(" +  (width + 4) + ", 0)")
-            .attr("fill", "red")
-            .call(d3.svg.axis().scale(ss_y).orient("right").ticks(3));
+     // Add the secondary structure size y-axis.
+     svg.append("g")
+         .attr("class", "ss axis")
+         // .attr("transform", "translate(" + (scale_number * y_axis_offset) +", 0)")   // left axis
+         .attr("transform", "translate(" +  (width + 4) + ", 0)")
+         .attr("fill", "red")
+         .call(d3.svg.axis().scale(ss_y).orient("right").ticks(3));
    
-        // secondary structure y-axis label
-        svg.append("text")
-        .attr("class", "ss y label")
-        .attr("text-anchor", "middle")
-        // .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset + 10))
-        .attr("y", width + 50)
-        .attr("x", 0 - (height / 2) )
-        .attr("fill", "red")
-        .attr("transform", "rotate(-90)")
-        .text("-∆G (kcal/mol)");
+     // secondary structure y-axis label
+     svg.append("text")
+     .attr("class", "ss y label")
+     .attr("text-anchor", "middle")
+     // .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset + 10))
+     .attr("y", width + 50)
+     .attr("x", 0 - (height / 2) )
+     .attr("fill", "red")
+     .attr("transform", "rotate(-90)")
+     .text("-∆G (kcal/mol)");
 
-        // secondary structure y-axis label
-        // svg.append("text")
-        // .attr("class", "ss y label")
-        // .attr("text-anchor", "middle")
-        // .attr("y", ((scale_number * y_axis_offset) + y_axis_text_offset)+12)
-        // .attr("x", 0 - (height / 2) )
-        // // .attr("dy", "1em") // units of em shift text by size of current font
-        // .attr("fill", "grey")
-        // .attr("transform", "rotate(-90)")
-        // .text("(∆G<50 grey)");
-
-        // this complicated business creates a "gradient" to color structure values above 50 red
-        // and those below 50 grey 
-        svg.append("linearGradient")
-         .attr("id", "energy-gradient")
-         .attr("gradientUnits", "userSpaceOnUse")
-         .attr("x1", 0).attr("y1", ss_y(0))
-         .attr("x2", 0).attr("y2", ss_y(100))
-        .selectAll("stop")
-         .data([
-           {offset: "0%", color: "darkslategray"},   // mess with these values to change gradient
-           {offset: "30%", color: "darkslategray"},
-           {offset: "70%", color: "red"},
-           {offset: "100%", color: "red"}
-         ])
-       .enter().append("stop")
-         .attr("offset", function(d) { return d.offset; })
-         .attr("stop-color", function(d) { return d.color; });
+     // this complicated business creates a "gradient" to color structure values above 50 red
+     // and those below 50 grey 
+     svg.append("linearGradient")
+      .attr("id", "energy-gradient")
+      .attr("gradientUnits", "userSpaceOnUse")
+      .attr("x1", 0).attr("y1", ss_y(0))
+      .attr("x2", 0).attr("y2", ss_y(100))
+     .selectAll("stop")
+      .data([
+        {offset: "0%", color: "darkslategray"},   // mess with these values to change gradient
+        {offset: "30%", color: "darkslategray"},
+        {offset: "70%", color: "red"},
+        {offset: "100%", color: "red"}
+      ])
+     .enter().append("stop")
+       .attr("offset", function(d) { return d.offset; })
+       .attr("stop-color", function(d) { return d.color; });
    
    
-        // this is the line for the secondary structure prediction data
-        var ss_lineFunction = d3.svg.line()
-           // .x(function(d) { if (d.x % 5) { return undefined; } else { return nt_x(d.x);}  })
-           .defined(function(d) { return d.secondary_structure != null; })
-           .x(function(d) { return nt_x(d.x);  })
-           .y(function(d) { return ss_y(d.secondary_structure);})
-           .interpolate("linear");
+     // this is the line for the secondary structure prediction data
+     var ss_lineFunction = d3.svg.line()
+        // .x(function(d) { if (d.x % 5) { return undefined; } else { return nt_x(d.x);}  })
+        .defined(function(d) { return d.secondary_structure != null; })
+        .x(function(d) { return nt_x(d.x);  })
+        .y(function(d) { return ss_y(d.secondary_structure);})
+        .interpolate("linear");
    
-        // draw the 2˚ structure line
-        var ss_lineGraph = svg.append("g").append("path")
-                           .attr("d", ss_lineFunction(ss_data))
-                           .attr("class", "ss_line")
-                           .attr("stroke-width", 1)
-                           .attr("fill", "none");
+     // draw the 2˚ structure line
+     var ss_lineGraph = svg.append("g").append("path")
+                        .attr("d", ss_lineFunction(ss_data))
+                        .attr("class", "ss_line")
+                        .attr("stroke-width", 1)
+                        .attr("fill", "none");
 
-        // draw a scale box for the gradient 
-        var ss_colorbar = svg.append("g").append("rect")
-                          .attr("class", "ss_box")
-                          .attr("width", 4)
-                          .attr("height", height)
-                          .attr("y", 0)
-                          // .attr("x", (scale_number * y_axis_offset))
-                          .attr("x", width)
+     // draw a scale box for the gradient 
+     var ss_colorbar = svg.append("g").append("rect")
+                       .attr("class", "ss_box")
+                       .attr("width", 4)
+                       .attr("height", height)
+                       .attr("y", 0)
+                       // .attr("x", (scale_number * y_axis_offset))
+                       .attr("x", width)
 
-     }  // end plot sec structure
 
    }; // end proess_tsv callback
 
 } // end draw_plots
+}
 
-</script>
+}());

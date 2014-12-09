@@ -1,0 +1,28 @@
+.main_labels {
+   font-size: 12px;
+   font-family: Helvetica, sans-serif;
+	cursor: default; 
+	text-anchor: middle;
+	pointer-events: all;
+}
+
+.column_labels {
+   font-size: 12px;
+   font-family: Helvetica, sans-serif;
+	text-anchor: middle;
+	cursor: default; 
+	pointer-events: all;
+}
+
+.cell  {
+  fill: white;
+  stroke: #eee;
+  stroke-width: 0.5px;
+}
+
+.cell-highlighted {
+  fill: white;
+  stroke: #ccc;
+  stroke-width: 0.5px;
+}
+

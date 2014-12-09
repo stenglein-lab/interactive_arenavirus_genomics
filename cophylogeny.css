@@ -1,0 +1,39 @@
+
+.tree_label {
+   font-size: 14px;
+   font-family: Helvetica, sans-serif;
+}
+
+.node {
+   font-family: Helvetica, sans-serif;
+   font-size: 8px;
+	cursor: default; 
+	pointer-events: all;
+}
+
+.link {
+   fill: none;
+   stroke: black;
+   stroke-width: 1px;
+}
+
+.bridge {
+   stroke: #E8E8E8;
+	fill: none;
+	stroke-width: 1px;
+}
+
+.bridge-highlighted {
+   stroke: red;
+	fill: none;
+	stroke-width: 1.5px;
+}
+
+@media print
+{
+   .no-print, .no-print *
+	{
+	display: none !important;
+	}
+}
+

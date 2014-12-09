@@ -1,98 +1,12 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
-<style>
- 
-body {
-  font: 14px helvetica;
-}
-p {
-  margin-top: 6px;
-  margin-bottom: 4px;
-}
-
-.header_p {
-  font: 14px helvetica;
-}
- 
-.axis path, .axis line {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
- 
-.point {
-  fill: steelblue;
-  stroke: #000;
-}
-
-.cov_line_blue {
-  fill: lightsteelblue;
-  stroke: black;
-  stroke-width: 1;
-}
-
-.cov_line {
-  fill: #E8E8E8;
-  stroke: black;
-  stroke-width: 1;
-}
-
-.ss_line {
-  fill: none;
-  stroke: url(#energy-gradient);
-  stroke-width: 1;
-}
-
-.ss_box {
-  fill: url(#energy-gradient);
-  stroke: black;
-  stroke-width: 1;
-}
-
-.axis tspan {
-  font-size: 10px;
-}
-
-@media print
-{    
-   .no-print, .no-print *
-   {
-   display: none !important;
-   }
-}
- 
-</style>
-<body>
-
-<div class='no-print'>
-<p> 
-   <form id="seg_filter_form">
-      Segments to display filter (leave empty to display all segments): 
-      <input type="text" id="seg_filter_input" name="seg_filter_input" />
-      <input type="button" value="Render" id="render_button" name="render_button"/>
-   </form>
-   <br>
-   <form id="clear_form">
-      <input type="button" value="Clear Display" id="clear_button" name="clear_button"/>
-   </form>
-   <br> Tracks to display:
-   <br>
-   <br> coverage:     <input type="checkbox" id="cov_check" checked>
-   <br> 2˚ structure: <input type="checkbox" id="ss_check" checked>
-   <br>
-   <br>
-</p>
-
-<!-- <p style="page-break-after:always;"></p> -->
-</div>
-
-<script src="http://d3js.org/d3.v3.min.js"></script>
-
-<script>
-
 // main javascript/d3 for rendering cartoons and plots
 // 
 // Mark Stenglein 8/1/2014
+
+/* segment_cartoons.js */
+
+(function () {
+
+segment_cartoons = {};
 
 var segments_all = [ 
 ["snake1_L1"],
@@ -315,8 +229,17 @@ var plot_margin = {top: 10, right: 40, bottom: 40, left: 50};
 var cartoon_margin = {top: 20, right: 40, bottom: 10, left: 50};
 var margin = plot_margin;
 
+segment_cartoons.render = function(selector)
+{
+
+var sel = d3.select(selector);
+var drawing_area = sel;
+var width = sel.style("width");
+var width = parseInt(width);
+
+
 // svg canvas width for everything
-var svg_width = 1000 - margin.left - margin.right;
+var svg_width = width - margin.left - margin.right;
    
 // y-axis scaling 
 // how tall plots will be in pixels
@@ -327,43 +250,7 @@ var svg_height = plot_canvas_height - margin.top - margin.bottom;
 var segment_count = 0;
 var segments_per_page = 6;
 
-// process input
-d3.select("#render_button").on("click", function() {
-
-  var filter_text = document.getElementById('seg_filter_input').value;
-  console.log("going to render segments with IDs matching : " + filter_text);
-  render_segments(filter_text);
-  });
-
-function clear_displayed_elements()
-{
-  console.log("clearing display...");
-  d3.select("body").selectAll("svg").remove();
-  d3.select("body").selectAll(".header_p").remove();
-}
-
-// refresh
-d3.select("#clear_button").on("click", clear_displayed_elements);
-
-// access this page's query string to get filter 
-// snippet copied from: http://css-tricks.com/snippets/javascript/get-url-variables/
-function getQueryVariable(variable)
-{
-   var query = window.location.search.substring(1);
-   var vars = query.split("&");
-   for (var i=0;i<vars.length;i++) 
-   {
-      var pair = vars[i].split("=");
-      if(pair[0] == variable){return pair[1];}
-   }
-   return(false);
-}
-
-// render segments based on URL query string
-if (query_string_filter = getQueryVariable("seg_filter_input"))
-{
-  render_segments(query_string_filter);
-}
+render_segments();
 
 // render some or all segments
 function render_segments(segment_filter)
@@ -400,7 +287,7 @@ function render_segments(segment_filter)
       if ((segment_count % segments_per_page) === 0)
       {
          console.log("segment " + segment_id + " #: " + segment_count);
-         var pb_p = d3.select("body").append("p").style("page-break-after", "always").style("text-align", "right");
+         var pb_p = drawing_area.append("p").style("page-break-after", "always").style("text-align", "right");
          var page_number = "page " + (segment_count / segments_per_page);
          // uncomment to add page #s to bottom of page
          // pb_p.text( page_number );
@@ -411,7 +298,7 @@ function render_segments(segment_filter)
 function render_segment(segment_id)
 {
    var header_text = "segment " + segment_id;
-   d3.select("body").append("p").text(header_text).attr("class", "header_p")
+   drawing_area.append("p").text(header_text).attr("class", "header_p")
    draw_all(segment_id);
    return;
 }
@@ -429,10 +316,10 @@ function draw_cartoon(segment_id)
    console.log ("drawing genome cartoon for segment " + segment_id  );
    
    var width = svg_width;
-   var height = 40; // don't hardcode
+   var height = 40; // TODO: don't hardcode (or is OK?)
 
    // add a new svg canvas area
-   var svg = d3.select("body").append("svg")
+   var svg = drawing_area.append("svg")
     .attr("width", width + cartoon_margin.left + cartoon_margin.right)
     .attr("height", height + cartoon_margin.top + cartoon_margin.bottom ) 
     .append("g")
@@ -440,6 +327,7 @@ function draw_cartoon(segment_id)
  
     // file w/ annotation data
     var file_name = "210_seg_renamed.tsv"; // TODO - don't hardcode
+    // var tsv_data_file = "http://localhost:8888/" + file_name;
     var tsv_data_file = "./" + file_name;
 
     // read file w/ annotation data
@@ -759,7 +647,7 @@ function draw_plots(segment_id)
    var height = svg_height;
 
    // add a new svg canvas area
-   var svg = d3.select("body").append("svg")
+   var svg = drawing_area.append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
@@ -767,6 +655,7 @@ function draw_plots(segment_id)
  
     var file_name = segment_id + ".tsv";
     // console.log ("opening " + file_name);
+    // var tsv_data_file = "http://localhost:8888/" + file_name;
     var tsv_data_file = "./" + file_name;
 
     // read file w/ coverage data
@@ -1006,5 +895,6 @@ function draw_plots(segment_id)
    }; // end proess_tsv callback
 
 } // end draw_plots
+}
 
-</script>
+}());

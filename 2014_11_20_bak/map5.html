@@ -54,7 +54,7 @@ var projection = d3.geo.albersUsa()
     .scale(750)
     .translate([width / 2, height / 2]);
 
-var geo_path = d3.geo.path()
+var path = d3.geo.path()
     .projection(projection)
 	 .pointRadius(4);
 
@@ -73,6 +73,7 @@ g.append("rect")
 // this is a hash of arrays mapping each city to list of snakes from there
 var city_snakes_map = {};
 
+// d3.text("http://localhost:8888/snake_loc_map.txt", function(text) {
 d3.text("./snake_loc_map.txt", function(text) {
   var data = d3.tsv.parseRows(text);
   data.forEach(function(d){
@@ -89,18 +90,8 @@ d3.text("./snake_loc_map.txt", function(text) {
 });
 
 // parse topoJSON format file containing geographical info about states and cities
+// d3.json("http://localhost:8888/us-plus_snake_cities.json", function(error, us) {
 d3.json("./us-plus_snake_cities.json", function(error, us) {
-
-
- var feats = topojson.feature(us, us.objects.snake_cities).features;
-     var ml = feats[0];
-     console.log("ml: ");
-     console.log(ml);
-     var mlp = geo_path(ml);
-     console.log("mlp: ");
-     console.log(mlp);
-     console.log("path: ");
-     console.log(geo_path);
 
   // states
   g.append("g")
@@ -108,17 +99,14 @@ d3.json("./us-plus_snake_cities.json", function(error, us) {
     .selectAll("path")
       .data(topojson.feature(us, us.objects.states).features)
     .enter().append("path")
-      .attr("d", geo_path)   
+      .attr("d", path)   
 		.on("click", fade_all); // if click outside a city, clear all highlighting
 
   // state borders
   g.append("path")
       .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
       .attr("id", "state-borders")
-      .attr("d", geo_path);
-
-  console.log ("states.features");
-  console.dir (topojson.feature(us, us.objects.states).features)
+      .attr("d", path);
 
   // cities
   g.append("g")
@@ -126,7 +114,7 @@ d3.json("./us-plus_snake_cities.json", function(error, us) {
     .selectAll("path")
       .data(topojson.feature(us, us.objects.snake_cities).features)
     .enter().append("path")
-		.attr("d", geo_path)
+		.attr("d", path)
       .attr("id", function(d) { return "city-" + d.properties.name; })
 		.attr("class", "place") 
      .on("click", toggle_highlight);
