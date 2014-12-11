@@ -4,7 +4,6 @@ cophylogeny.js
 
 */
 
-
 if (!d3) { throw "error: d3.js is required but not included"};
 
 // anonymous function wrapper
@@ -29,6 +28,16 @@ var newick_string_1, newick_string_2; // these will hold plain text newick trees
 var overall_vis;
 var tree1_g, tree2_g, bridge_g;
 var tree1_name, tree2_name;
+
+// color schemes from colorbrewer: http://colorbrewer2.org/
+// and see: http://bl.ocks.org/mbostock/5577023/
+var color_scheme_too_light = ["#fbb4ae","#b3cde3","#ccebc5","#decbe4","#fed9a6","#ffffcc","#e5d8bd","#fddaec","#f2f2f2"];
+var color_scheme_some_odd_ones = ["#8dd3c7","#ffffb3","#bebada","#fb8072","#80b1d3","#fdb462","#b3de69","#fccde5","#d9d9d9","#bc80bd","#ccebc5","#ffed6f"];
+var color_scheme_w_too_yellow = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99","#b15928"];
+var color_scheme_w_red = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#b15928"];
+var color_scheme = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#b15928"];
+
+
 
 // svg is the svg element upon which to draw the cophylogeny
 cophylogeny.render = function(selector, newick_file_1, newick_file_2, width, height)
@@ -380,14 +389,29 @@ function render_trees(newick_1, newick_2)
          .x(function(d) { return d.y; })
          .y(function(d) { return d.x; })
          .interpolate("bundle")
-         .tension(0.95);
+         .tension(0.99);
 
       var line_connect = bridge_g.append("path")
-         // .attr("d", lineFunction(seg_pair)) // for straight line
          .attr("d", lineFunction(seg_pair_spline_coords))
          .attr("class", "bridge")
          .attr("id", seg_id)
          .attr("pointer-events", "stroke") // only clicking on stroke works
+			.attr("stroke", function(d,i) { 
+			    // color bridging lines by genotype 
+			    var seg_genotype = seg_id.match(/[SL]([0-9]+)/)
+			    if (seg_genotype)
+			    {
+				    // match actually returns an array of results, the 2nd element is the one we want
+			       seg_genotype_number = seg_genotype[1];
+					 // we'll have to cycle through colors if more than in our scheme
+				    var color_index = seg_genotype_number % color_scheme.length; 
+				    return color_scheme[color_index];
+			    }
+			    else
+			    {
+			       return "#d3d3d3"; // == "lightgrey" --> d3, ha ha
+			    }
+			 })
 			.on("click", highlight_toggle); 
    });
 } // end render_trees()
