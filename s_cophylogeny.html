@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <!-- boostrap -->
+   <!-- Latest compiled and minified CSS -->
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+
+   <!-- Optional theme -->
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+
+   <!-- boostrap JS and jquery required for that -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+   <!-- Styles for figure graphics -->
+   <link rel="stylesheet" href="./cophylogeny.css">
+
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+</head>
+<style>
+   body,html {
+      height:100%;
+   }
+
+	pre {
+	   font-size: 8pt;
+	}
+</style>
+<body onload="load()">
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="./newick.js"></script>
+<script src="./cophylogeny.js"></script>
+
+<script>
+
+function render_cophylogeny_S(container_id)
+{
+  render_cophylogeny(container_id, "S");
+}
+
+function render_cophylogeny_L(container_id)
+{
+  render_cophylogeny(container_id, "L");
+}
+
+function render_cophylogeny(container_id, segment_id)
+{
+	var container_sel = d3.select(container_id);
+   var w = container_sel.style("width");
+	w = parseInt(w);
+   var h;
+
+   var newick_file_1 = "";
+   var newick_file_2 = "";
+   if (segment_id === "S")
+   {
+      newick_file_1 = "./gp.newick";
+      newick_file_2 = "./np.newick";
+      h = 600;
+   }
+   else
+   {
+      newick_file_1 = "./z.newick";
+      newick_file_2 = "./l.newick";
+      h = 1200;
+   }
+	clear(container_id);
+	cophylogeny.render(container_id, newick_file_1, newick_file_2, w, h);
+}
+
+function load()
+{
+   render_cophylogeny_S("container");
+}
+
+</script>
+
+<div class="container-fluid">
+   <div class="row">
+      <div class="col-md-12"">
+         <H3>S segment cophylogeny</H3>
+			<br>
+			<br>
+      </div >
+   </div>
+</div>
+
+<!-- spacer -->
+<div class="container-fluid">
+<p></p>
+</div>
+
+<!-- empty container to be populated by figs -->
+<div class="container-fluid" id="container">
+</div>
+
+</body>
+</html>
