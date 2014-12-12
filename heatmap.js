@@ -19,13 +19,22 @@ var l_heatmap_data = [];
 
 var tooltip_div;
 
+var my_selector; 
+
 // read these data files immediately because asynchronous
-read_heatmap_data("./l_heatmap_data.txt", l_heatmap_data, l_column_labels, l_row_labels); 
-read_heatmap_data("./s_heatmap_data.txt", s_heatmap_data, s_column_labels, s_row_labels); 
+read_heatmap_data("./s_heatmap_data.txt", s_heatmap_data, s_column_labels, s_row_labels, "S"); 
+read_heatmap_data("./l_heatmap_data.txt", l_heatmap_data, l_column_labels, l_row_labels, "L"); 
+
+// function to render heatmaps
+heatmap.update_highlighted_segments = function() {
+   console.log("higlighting segments: " + highlighted_segments);
+   console.log("my_selector: " + my_selector);
+}
 
 // function to render heatmaps
 heatmap.render = function(selector) {
 
+	my_selector = selector;
    var sel = d3.select(selector);
    var width = sel.style("width");
    width = parseInt(width);
@@ -131,25 +140,21 @@ heatmap.render = function(selector) {
                  .attr("id", function(d, i) { return "h" + label + " c" + i ; })
                  .attr("class", function (d, i) { return "column_labels" + " h" + label + " c" + i ;})
                  .text(function(d,i) { return (d); })
-					  // .on("click", highlight_by_col()) // 
 					  .on("mouseover", highlight_by_header())
 					  .on("mouseout", highlight_by_header());
 
+      // add row labels
 		if (row_labels)
 		{
-      	// add row labels
-         var row = g.selectAll(".row_labels")
+         var row_labels = g.selectAll(".row_labels")
                     .data(row_labels)
                     .enter().append("text")
-                    // .attr("x", function(d, i) { var x = x_offset; console.log(x); return x; })
                     .attr("x", function(d, i) { return 0; })
                     .attr("y", function(d, i) { var y = y_offset + (i * cell_height) + (cell_height / 2);  return y; })
-                    // .attr("dy", "-0.5em")
                     // .attr("id", function(d, i) { return "h" + label + " r" + i ; })
                     .attr("id", function(d, i) { return "r" + i ; })
                     .attr("class", function (d, i) { return "row_labels" + " h" + label + " r" + i ;})
                     .text(function(d,i) { return (d); })
-   					  // .on("click", highlight_by_col()) // 
    					  .on("mouseover", highlight_by_header())
    					  .on("mouseout", highlight_by_header());
 		} 
@@ -168,6 +173,8 @@ heatmap.render = function(selector) {
    				  .on("mouseover", cell_mouseover())
    				  .on("mouseout", cell_mouseout());
    }
+
+   return this;
 } // end heatmap.render
 
 
@@ -176,7 +183,7 @@ heatmap.render = function(selector) {
 // and the first column should contain row labels
 // the data will be stored in the heatmap_data object passed as arg
 // row and col labels stored in arrays passed as args
-function read_heatmap_data(file, heatmap_data, column_labels, row_labels)
+function read_heatmap_data(file, heatmap_data, column_labels, row_labels, segment)
 {
    d3.text(file, function(text) {
 
@@ -208,6 +215,7 @@ function read_heatmap_data(file, heatmap_data, column_labels, row_labels)
               new_cell.row = row_ctr;
               new_cell.col = col_ctr;
               new_cell.value = v;
+              new_cell.segment = segment;
               col_ctr += 1;
               heatmap_data.push(new_cell);
               // better to do this as a 2d array?
@@ -222,8 +230,12 @@ function cell_mouseover()
 {
    return function()
    {
+		console.log("cell mouseover");
       var cell = d3.select(this);
-	   highlight_by_cell(cell);
+		console.dir(cell);
+		cell.each(highlight_toggle);
+
+		// tooltip
       var cell_value = cell.datum().value;
 		cell_value = parseFloat(cell_value).toFixed(2);
 		tooltip_mouseover(cell_value);
@@ -233,8 +245,10 @@ function cell_mouseout()
 {
    return function()
    {
+		console.log("cell mouseout");
       var cell = d3.select(this);
-	   highlight_by_cell(cell);
+		cell.each(highlight_toggle);
+
 		tooltip_mouseout();
    }
 }
@@ -243,12 +257,14 @@ function highlight_by_cell(cell) {
 
    // return function()
    // {
+		console.log("highlight_by_cell");
       // var cell = d3.select(this);
       var id = cell.attr("id");
 		var cells_to_select_classes="." + id.replace(/ /g,".");
-		console.log(cells_to_select_classes);
+		// console.log(cells_to_select_classes);
 		var all_cells = d3.selectAll(cells_to_select_classes); 
 		all_cells.each(highlight_toggle);
+		update_highlighting(my_selector);
    // }
 }
 
@@ -259,15 +275,26 @@ function highlight_by_header() {
       var row_or_col_label = d3.select(this);
       var id = row_or_col_label.attr("id");
 		var cells_to_select_classes="." + id.replace(/ /g,".");
-		// console.log(cells_to_select_classes);
+		console.log(cells_to_select_classes);
 		var all_cells = d3.selectAll(cells_to_select_classes); 
 		all_cells.each(highlight_toggle);
+		update_highlighting(my_selector);
    }
 }
 
 function highlight_toggle()
 {
    var currentClass = d3.select(this).attr("class");
+
+	var datum = d3.select(this).datum();
+	var row = datum.row;
+	var col = datum.col;
+	var segment = datum.segment;
+	var segment_id = "snake" + row + "_" + segment + col;
+	console.log(segment_id);
+
+	// this is link to other figs
+	update_highlighted_list(segment_id); 
 
 	// console.log ("currentClass: " + currentClass);
 
@@ -284,7 +311,7 @@ function highlight_toggle()
 
 function fade_all() {
    // clear all highlighting
-   d3.selectAll(".place-highlighted").attr("class", "place");
+   // d3.selectAll(".cell-highlighted").attr("class", "cell");
 }
 
 // tooltip scheme adapted from: http://bl.ocks.org/mbostock/1087001

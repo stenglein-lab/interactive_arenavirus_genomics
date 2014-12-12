@@ -44,7 +44,47 @@
 
 <script>
 
-var highlighted_segments = ['snake22_L10', 'snake29_S6'];
+// var highlighted_segments = ['snake22_L10', 'snake29_S6'];
+var highlighted_segments = [];
+
+// this will point to objects corresponding to the 2 figs
+var figures = {};
+
+function update_highlighting(selector)
+{
+	var containers = Object.keys(figures); 
+	containers.forEach(function(container){
+	   if (container === selector)
+		{
+		   // don't do anything, 
+		}
+		else
+		{  
+		   figures[container].update_highlighted_segments();
+		}
+	});
+}
+
+function update_highlighted_list(segment_id)
+{
+	if (highlighted_segments.length === 0)
+	{
+	   highlighted_segments = [segment_id];
+	}
+	else 
+	{
+	   var seg_index = highlighted_segments.indexOf(segment_id); 
+	   if ( seg_index > -1 )
+	   {
+	      highlighted_segments.splice(seg_index, 1); // remove that element
+	   }
+	   else
+	   {
+         highlighted_segments.push(segment_id);
+	   }
+	}
+	console.log(highlighted_segments);
+}
 
 function clear(selector)
 {
@@ -57,29 +97,32 @@ function clear(selector)
 
 function render_plots(container_id)
 {
-	console.log("rendering plots in container: " + container_id);
 	clear(container_id);
-	plots.render(container_id);
+	var plot_fig = plots.render(container_id);
+	figures[container_id] = plot_fig;
 }
 
 function render_heatmap(container_id)
 {
-	console.log("rendering heatmap in container: " + container_id);
 	clear(container_id);
-	heatmap.render(container_id);
+	var heatmap_fig = heatmap.render(container_id);
+	figures[container_id] = heatmap_fig;
+	console.log("figure for container " + container_id + " -> ");
+	console.dir(figures[container_id]);
 }
 
 function render_map(container_id)
 {
 	clear(container_id);
-	map.render(container_id);
+	var map_fig = map.render(container_id);
+	figures[container_id] = map_fig;
 }
 
 function render_fasta(container_id)
 {
-	console.log("rendering fasta in container: " + container_id);
 	clear(container_id);
-	fasta.render(container_id);
+	var fasta_fig = fasta.render(container_id);
+	figures[container_id] = fasta_fig;
 }
 
 function render_cophylogeny_S(container_id)
@@ -113,7 +156,8 @@ function render_cophylogeny(container_id, segment_id)
       h = 1200;
    }
 	clear(container_id);
-	cophylogeny.render(container_id, newick_file_1, newick_file_2, w, h);
+	var cophylogeny_fig = cophylogeny.render(container_id, newick_file_1, newick_file_2, w, h);
+	figures[container_id] = cophylogeny_fig;
 }
 
 function load()
