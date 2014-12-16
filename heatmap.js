@@ -7,6 +7,7 @@ if (!d3) { throw "error: d3.js is required but not included"};
 heatmap = {};
 
 // global vars
+
 // column labels
 var s_column_labels = [];
 var l_column_labels = [];
@@ -140,8 +141,9 @@ heatmap.render = function(selector) {
                  .attr("id", function(d, i) { return "h" + label + " c" + i ; })
                  .attr("class", function (d, i) { return "column_labels" + " h" + label + " c" + i ;})
                  .text(function(d,i) { return (d); })
-					  .on("mouseover", highlight_by_header())
-					  .on("mouseout", highlight_by_header());
+					  .on("click", highlight_by_header())
+					  // .on("mouseover", highlight_by_header())
+					  // .on("mouseout", highlight_by_header());
 
       // add row labels
 		if (row_labels)
@@ -155,8 +157,9 @@ heatmap.render = function(selector) {
                     .attr("id", function(d, i) { return "r" + i ; })
                     .attr("class", function (d, i) { return "row_labels" + " h" + label + " r" + i ;})
                     .text(function(d,i) { return (d); })
-   					  .on("mouseover", highlight_by_header())
-   					  .on("mouseout", highlight_by_header());
+					     .on("click", highlight_by_header())
+   					  // .on("mouseover", highlight_by_header())
+   					  // .on("mouseout", highlight_by_header());
 		} 
 
    	// lay out the heatmap
@@ -170,6 +173,7 @@ heatmap.render = function(selector) {
                  .attr("width", cell_width)
                  .attr("height", cell_height)
                  .style("fill", function(d) { return colorScale(d.value); })
+   				  .on("click", cell_click())
    				  .on("mouseover", cell_mouseover())
    				  .on("mouseout", cell_mouseout());
    }
@@ -214,7 +218,7 @@ function read_heatmap_data(file, heatmap_data, column_labels, row_labels, segmen
               new_cell.col_label = column_labels[col_ctr];
               new_cell.row = row_ctr;
               new_cell.col = col_ctr;
-              new_cell.value = v;
+              new_cell.value = +v; // force to numeric value
               new_cell.segment = segment;
               col_ctr += 1;
               heatmap_data.push(new_cell);
@@ -230,10 +234,8 @@ function cell_mouseover()
 {
    return function()
    {
-		console.log("cell mouseover");
       var cell = d3.select(this);
-		console.dir(cell);
-		cell.each(highlight_toggle);
+		// cell.each(highlight_toggle);
 
 		// tooltip
       var cell_value = cell.datum().value;
@@ -241,31 +243,48 @@ function cell_mouseover()
 		tooltip_mouseover(cell_value);
    }
 }
+
 function cell_mouseout()
 {
    return function()
    {
-		console.log("cell mouseout");
       var cell = d3.select(this);
-		cell.each(highlight_toggle);
+		// cell.each(highlight_toggle);
 
 		tooltip_mouseout();
    }
 }
 
-function highlight_by_cell(cell) {
-
-   // return function()
-   // {
-		console.log("highlight_by_cell");
-      // var cell = d3.select(this);
+function cell_click() 
+{
+   return function()
+   {
+      var cell = d3.select(this);
       var id = cell.attr("id");
 		var cells_to_select_classes="." + id.replace(/ /g,".");
-		// console.log(cells_to_select_classes);
 		var all_cells = d3.selectAll(cells_to_select_classes); 
 		all_cells.each(highlight_toggle);
-		update_highlighting(my_selector);
-   // }
+		transmit_new_highlighting();
+   }
+}
+
+function transmit_new_highlighting()
+{
+	var highlighted_segments_this_fig = [];
+   var highlighted_cells = d3.selectAll("rect.cell-highlighted")[0];  // nested selection
+
+	highlighted_cells.forEach(function (cell){
+	   var datum = d3.select(cell).datum();
+	   var row = datum.row + 1; // convert 0-index to 1-index snake/genotype numbering
+	   var col = datum.col + 1;
+	   var segment = datum.segment;
+	   var segment_id = "snake" + row + "_" + segment + col;
+	   // console.log(segment_id);
+		highlighted_segments_this_fig.push(segment_id);
+	});
+
+	update_highlighting(my_selector, highlighted_segments_this_fig);
+   
 }
 
 function highlight_by_header() {
@@ -273,12 +292,38 @@ function highlight_by_header() {
    return function()
    {
       var row_or_col_label = d3.select(this);
+		var currentClass = row_or_col_label.attr("class");
+		var turn_on_highlighting = true;
+
+      if (currentClass.match("highlighted")) {
+		   // in this case, we will turn off highlighting for all cells in row or column
+			turn_on_highlighting = false;
+	      currentClass = currentClass.replace("labels_highlighted", "labels");
+         row_or_col_label.attr("class", currentClass);
+		}
+		else
+		{
+		   // in this case, we will turn on highlighting for all cells in row or column
+			turn_on_highlighting = true;
+	      currentClass = currentClass.replace("labels", "labels_highlighted");
+         row_or_col_label.attr("class", currentClass);
+		}
+
       var id = row_or_col_label.attr("id");
 		var cells_to_select_classes="." + id.replace(/ /g,".");
-		console.log(cells_to_select_classes);
+		// console.log(cells_to_select_classes);
 		var all_cells = d3.selectAll(cells_to_select_classes); 
-		all_cells.each(highlight_toggle);
-		update_highlighting(my_selector);
+
+		if (turn_on_highlighting)
+		{
+		   all_cells.each(highlight_on);
+		}
+		else
+		{
+		   all_cells.each(highlight_off);
+		}
+
+		transmit_new_highlighting();
    }
 }
 
@@ -287,31 +332,66 @@ function highlight_toggle()
    var currentClass = d3.select(this).attr("class");
 
 	var datum = d3.select(this).datum();
-	var row = datum.row;
-	var col = datum.col;
-	var segment = datum.segment;
-	var segment_id = "snake" + row + "_" + segment + col;
-	console.log(segment_id);
+	var cell_value = datum.value;
+	console.log ("cell_value: " + cell_value);
+	if (cell_value === 0)
+	{
+	   // don't highlight an "empty" cell
+		console.log ("don't highlight an empty cell");
+		return;
+	}
 
-	// this is link to other figs
-	update_highlighted_list(segment_id); 
-
-	// console.log ("currentClass: " + currentClass);
-
+	// toggle highlighting state of cells
    if (currentClass.match("cell-highlighted")) {
       currentClass = currentClass.replace("cell-highlighted", "cell");
       d3.select(this).attr("class", currentClass);
    }
    else {
-		currentClass = currentClass.replace("cell", "cell-highlighted");
+	   currentClass = currentClass.replace("cell", "cell-highlighted");
       d3.select(this).attr("class", currentClass);
+   }
+}
+
+function highlight_on()
+{
+   var currentClass = d3.select(this).attr("class");
+
+	var datum = d3.select(this).datum();
+	var cell_value = datum.value;
+	if (cell_value === 0)
+	{
+	   // don't highlight an "empty" cell
+		return;
+	}
+
+	// turn on highlighting for cell
+   if (currentClass.match("cell-highlighted")) {
+	    // already on - don't need to do anything
+   }
+   else {
+	   currentClass = currentClass.replace("cell", "cell-highlighted");
+      d3.select(this).attr("class", currentClass);
+   }
+}
+
+function highlight_off()
+{
+   var currentClass = d3.select(this).attr("class");
+
+	// turn off highlighting for cell
+   if (currentClass.match("cell-highlighted")) {
+      currentClass = currentClass.replace("cell-highlighted", "cell");
+      d3.select(this).attr("class", currentClass);
+   }
+   else {
+	    // already on - don't need to do anything
    }
 }
 
 
 function fade_all() {
    // clear all highlighting
-   // d3.selectAll(".cell-highlighted").attr("class", "cell");
+   d3.selectAll(".cell-highlighted").attr("class", "cell");
 }
 
 // tooltip scheme adapted from: http://bl.ocks.org/mbostock/1087001

@@ -6,14 +6,15 @@
 	pointer-events: all;
 }
 
-.column_labels {
+.column_labels, .column_labels_highlighted {
    font-size: 10px;
    font-family: Helvetica, sans-serif;
 	text-anchor: middle;
 	cursor: default; 
 	pointer-events: all;
 }
-.row_labels {
+
+.row_labels, .row_labels_highlighted {
    font-size: 10px;
    font-family: Helvetica, sans-serif;
 	text-anchor: left;
@@ -29,8 +30,8 @@
 
 .cell-highlighted {
   fill: white;
-  stroke: #bbb;
-  stroke-width: 0.7px;
+  stroke: #00ff7f;
+  stroke-width: 2px;
 }
 
 div.tooltip {

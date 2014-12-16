@@ -50,8 +50,15 @@ var highlighted_segments = [];
 // this will point to objects corresponding to the 2 figs
 var figures = {};
 
-function update_highlighting(selector)
+function update_highlighting(selector, segment_list)
 {
+	if (segment_list != null)
+	{
+	   highlighted_segments = segment_list.slice(0); // copy array
+	}
+
+	console.log("updating highlighting");
+
 	var containers = Object.keys(figures); 
 	containers.forEach(function(container){
 	   if (container === selector)
@@ -60,30 +67,10 @@ function update_highlighting(selector)
 		}
 		else
 		{  
-		   figures[container].update_highlighted_segments();
+			clear(container);
+		   figures[container].update_highlighted_segments(container);
 		}
 	});
-}
-
-function update_highlighted_list(segment_id)
-{
-	if (highlighted_segments.length === 0)
-	{
-	   highlighted_segments = [segment_id];
-	}
-	else 
-	{
-	   var seg_index = highlighted_segments.indexOf(segment_id); 
-	   if ( seg_index > -1 )
-	   {
-	      highlighted_segments.splice(seg_index, 1); // remove that element
-	   }
-	   else
-	   {
-         highlighted_segments.push(segment_id);
-	   }
-	}
-	console.log(highlighted_segments);
 }
 
 function clear(selector)
@@ -107,8 +94,8 @@ function render_heatmap(container_id)
 	clear(container_id);
 	var heatmap_fig = heatmap.render(container_id);
 	figures[container_id] = heatmap_fig;
-	console.log("figure for container " + container_id + " -> ");
-	console.dir(figures[container_id]);
+	// console.log("figure for container " + container_id + " -> ");
+	// console.dir(figures[container_id]);
 }
 
 function render_map(container_id)
@@ -139,6 +126,7 @@ function render_cophylogeny(container_id, segment_id)
 	var container_sel = d3.select(container_id);
    var w = container_sel.style("width");
 	w = parseInt(w);
+	// var w = 600;
    var h;
 
    var newick_file_1 = "";
@@ -148,12 +136,13 @@ function render_cophylogeny(container_id, segment_id)
       newick_file_1 = "./gp.newick";
       newick_file_2 = "./np.newick";
       h = 600;
+      // h = 768;
    }
    else
    {
       newick_file_1 = "./z.newick";
       newick_file_2 = "./l.newick";
-      h = 1200;
+      h = 1040;
    }
 	clear(container_id);
 	var cophylogeny_fig = cophylogeny.render(container_id, newick_file_1, newick_file_2, w, h);
