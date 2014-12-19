@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+
+use strict;
+
+my %hash = undef;
+
+while (<>)
+{
+   chomp;
+	my $line = $_;
+	for (my $i = 0; $i < length($line); $i++)
+	{
+	   my $char = substr ($line, $i, 1);
+		$hash{$char} += 1;
+	}
+}
+
+my @nts = qw (A C G T);
+
+foreach my $nt (@nts)
+{
+   print "$hash{$nt} ";
+}
+print "\n";

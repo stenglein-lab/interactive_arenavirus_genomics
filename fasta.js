@@ -24,11 +24,12 @@ fasta.seqs = {};
 fasta.render = function(selector)
 {
 	var sel = d3.select(selector);
-   sel.append("pre").text(generate_fasta());
+   sel.append("pre").attr("class", "fasta_pre").text(generate_fasta());
 	return this;
 };
 
 fasta.update_highlighted_segments = function(selector){
+	clear(selector);
    fasta.render(selector);
 }
 

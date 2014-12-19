@@ -874,6 +874,7 @@ plots.render = function(selector)
 } // end render
 
 plots.update_highlighted_segments = function(selector) {
+	clear(selector);
    plots.render(selector);
 }
 

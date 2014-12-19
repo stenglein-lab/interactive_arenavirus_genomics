@@ -9,7 +9,9 @@ if (!d3) { throw "error: d3.js is required but not included"};
 // anonymous function wrapper
 (function() {
 
-cophylogeny = {};
+cophylogeny = {}; 
+
+var my_selector;
 
 // TODO
 //  zoomable
@@ -31,17 +33,34 @@ var tree1_name, tree2_name;
 
 // color schemes from colorbrewer: http://colorbrewer2.org/
 // and see: http://bl.ocks.org/mbostock/5577023/
-var color_scheme_too_light = ["#fbb4ae","#b3cde3","#ccebc5","#decbe4","#fed9a6","#ffffcc","#e5d8bd","#fddaec","#f2f2f2"];
-var color_scheme_some_odd_ones = ["#8dd3c7","#ffffb3","#bebada","#fb8072","#80b1d3","#fdb462","#b3de69","#fccde5","#d9d9d9","#bc80bd","#ccebc5","#ffed6f"];
-var color_scheme_w_too_yellow = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99","#b15928"];
-var color_scheme_w_red = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#b15928"];
 var color_scheme = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#b15928"];
 
+// cophylogeny.my_selector;
 
+cophylogeny.update_highlighted_segments = function(selector){
+	console.log ("updating cophylogeny highlighting for container: " + selector);
+	// first, turn off all highlighting, then turn back on as appropriate
+   var all_bridges = d3.select(selector).select("#bridge_g").selectAll("path")[0]; // nested selections --> array of arrays hence extra [0]
+	d3.selectAll(all_bridges).each(highlight_off);
 
-// svg is the svg element upon which to draw the cophylogeny
+	// if any highlighting, turn on as appropriate 
+   if (highlighted_segments.length > 0)
+	{
+		highlighted_segments.forEach(function(id){
+         var matching_bridges = all_bridges.filter(function(d) {
+           if (d.id.match(id)) { return true; }
+           else { return false; }
+         });
+         d3.selectAll(matching_bridges).each(highlight_on)
+		});
+	}
+}
+
+// selector is the svg element upon which to draw the cophylogeny
 cophylogeny.render = function(selector, newick_file_1, newick_file_2, width, height)
 {
+	my_selector = selector;
+
 	var sel = d3.select(selector);
    var w = width || sel.style('width') || sel.attr('width');
    var h = height || sel.style('height') || sel.attr('height');
@@ -85,6 +104,8 @@ cophylogeny.render = function(selector, newick_file_1, newick_file_2, width, hei
       newick_string_2 = parsed_text;
       if (!--remaining) parse_newick_strings();
    });
+
+   return this;
 
 } // end load()
 
@@ -204,11 +225,11 @@ function render_trees(newick_1, newick_2)
          return n.rootDist;
       });
       // var y_range = [0, (w / 3)]; // --> draw the tree on 1st 1/3 of the svg canvas
-      var y_range = [0, (w * 0.35)]; // --> draw the tree on 1st 40% of the svg canvas
+      var y_range = [0, (w * 0.37)]; // --> draw the tree on 1st 37% of the svg canvas
       if (inverted)
       {
          // y_range = [w, (w * 2 / 3)]; // --> draw the tree vertically reflected on last 1/3 of the svg canvas
-         y_range = [w, (w * 0.65)]; // --> draw the tree vertically reflected on last 40% of the svg canvas
+         y_range = [w, (w * 0.63)]; // --> draw the tree vertically reflected on last 37% of the svg canvas
       }
       var yscale = d3.scale.linear()
          .domain([0, d3.max(rootDists)])
@@ -269,7 +290,7 @@ function render_trees(newick_1, newick_2)
    tree2_g = overall_vis.append("g")
    .attr("transform", "translate(" + margin.left + ", " + margin.top + ")") ;
    bridge_g = overall_vis.append("g")
-   .attr("transform", "translate(" + margin.left + ", " + margin.top + ")") ;
+   .attr("transform", "translate(" + margin.left + ", " + margin.top + ")").attr("id", "bridge_g") ;
 
    // add labels 
 	tree1_g.append("text")
@@ -352,7 +373,7 @@ function render_trees(newick_1, newick_2)
       .style("text-anchor", "start")
       // .style("cursor", "default") // make it not be a text cursor
       // .attr("pointer-events", "all") 
-      .text(function(d) { return d.name.replace(/'/g, "").replace("snake","").replace(/[SL]/, "").replace(" ", "-"); })
+      .text(function(d) { return d.name.replace(/'/g, "").replace("snake","").replace(/[SL]/, "").replace("_", "-"); })
 		.on("click", highlight_from_node());
 
    // add labels to nodes
@@ -363,14 +384,14 @@ function render_trees(newick_1, newick_2)
       .style("text-anchor", "end")
       // .style("cursor", "default") // make it not be a text cursor
       // .attr("pointer-events", "all") 
-      .text(function(d) { return d.name.replace(/'/g, "").replace("snake","").replace(/[SL]/, "").replace(" ", "-"); })
+      .text(function(d) { return d.name.replace(/'/g, "").replace("snake","").replace(/[SL]/, "").replace("_", "-"); })
 		.on("click", highlight_from_node());
 
    // draw bridging lines
    tree1_nodes.forEach(function(n)
    {
       if (n.children) { return false; }
-      var seg_id = n.name;
+      var seg_id = String(n.name);
       var seg_pair = get_segment_node_pair(seg_id, tree1_nodes, tree2_nodes);
       var x1 = seg_pair[0].x;
       var y1 = seg_pair[0].y + 40; // to get past text. NB x,y flipped in d3.layout.cluster
@@ -412,16 +433,16 @@ function render_trees(newick_1, newick_2)
 			       return "#d3d3d3"; // == "lightgrey" --> d3, ha ha
 			    }
 			 })
-			.on("click", highlight_toggle); 
+			// .on("click", highlight_toggle); 
+			.on("click", highlight_from_node); 
    });
 } // end render_trees()
 
 // inspired by: http://bl.ocks.org/mbostock/4062006
 function fade_all()
 {
-   bridge_g.selectAll(".bridge-highlighted")
-      .transition()
-      .duration(250)
+	   d3.select(my_selector)
+      .selectAll(".bridge-highlighted")
       .attr("class", "bridge");
 };
 
@@ -434,13 +455,14 @@ function highlight_from_node()
       var node = d3.select(this).datum();
       var node_id = node.name;
       highlight_by_id(node_id);
+		transmit_new_highlighting();
    }
 };
 
 // highlight lines matching certain nodes
 function highlight_by_id(id)
 {
-   var all_bridges = bridge_g.selectAll("path")[0]; // don't understand why [0] necessary
+   var all_bridges = bridge_g.selectAll("path")[0]; // nested selections --> array of arrays hence extra [0]
    var matching_bridges = all_bridges.filter(function(d) {
      if (d.id.match(id)) { return true; }
      else { return false; }
@@ -458,5 +480,34 @@ function highlight_toggle()
 	   d3.select(this).attr("class", "bridge");
 	}
 }
+
+function highlight_on()
+{
+	console.log ("highlight on for this: " );
+	console.dir (this);
+   d3.select(this).attr("class", "bridge-highlighted");
+}
+
+function highlight_off()
+{
+   d3.select(this).attr("class", "bridge");
+}
+
+function transmit_new_highlighting()
+{
+	console.log ("my_selector: " + my_selector);
+   var highlighted_segments_this_fig = [];
+   var highlighted_segs = d3.select(my_selector).selectAll(".bridge-highlighted")[0];  // nested selection
+
+   highlighted_segs.forEach(function (seg){
+      var segment_id = d3.select(seg).attr("id");
+      console.log(segment_id);
+      highlighted_segments_this_fig.push(segment_id);
+   });
+
+   update_highlighting(my_selector, highlighted_segments_this_fig);
+}
+
+
 
 }());

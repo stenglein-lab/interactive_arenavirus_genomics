@@ -4,7 +4,11 @@ if (!d3) { throw "error: d3.js is required but not included"};
 
 (function() {
 
-heatmap = {};
+heatmap = function(selector) {
+   this.my_selector = selector;
+}
+
+// heatmap = {};
 
 // global vars
 
@@ -20,23 +24,42 @@ var l_heatmap_data = [];
 
 var tooltip_div;
 
-var my_selector; 
+// var my_selector; 
 
 // read these data files immediately because asynchronous
 read_heatmap_data("./s_heatmap_data.txt", s_heatmap_data, s_column_labels, s_row_labels, "S"); 
 read_heatmap_data("./l_heatmap_data.txt", l_heatmap_data, l_column_labels, l_row_labels, "L"); 
 
-// function to render heatmaps
-heatmap.update_highlighted_segments = function() {
-   console.log("higlighting segments: " + highlighted_segments);
-   console.log("my_selector: " + my_selector);
+// update segments based on other interactive figure's highlighting
+heatmap.prototype.update_highlighted_segments = function(selector) {
+
+	console.log ("highlighting heatmap cells " + highlighted_segments);
+	fade_all();
+
+	if (highlighted_segments.length > 0)
+	{
+	   highlighted_segments.forEach(function(seg_id){
+			// convert segment id to heatmap/column/row class encoding
+			var tokens = seg_id.split("_");
+			var snake_id = tokens[0].replace("snake", "");
+			var seg_id = tokens[1].match(/[SL]/)[0]; 
+			var genotype = tokens[1].replace(/[SL]/, "");
+			var cell_id = "h" + seg_id + " c" + (genotype - 1) + " r" + (snake_id - 1);
+		   var cells_to_select_classes="." + cell_id.replace(/ /g,".");
+		   // console.log(cells_to_select_classes);
+		   var all_cells = d3.select(selector).selectAll(cells_to_select_classes); 
+		   all_cells.each(highlight_on);
+      });
+	}
 }
 
 // function to render heatmaps
-heatmap.render = function(selector) {
+// heatmap.render = function(selector) {
+heatmap.prototype.render = function() {
 
-	my_selector = selector;
-   var sel = d3.select(selector);
+	// my_selector = selector;
+   // var sel = d3.select(selector);
+   var sel = d3.select(this.my_selector);
    var width = sel.style("width");
    width = parseInt(width);
    var padding = sel.style("padding-left");
@@ -132,6 +155,7 @@ heatmap.render = function(selector) {
 		  .text(label_text);
 
    	// add column labels
+      // var col_labels = g.select(my_selector).selectAll(".column_labels")
       var col_labels = g.selectAll(".column_labels")
                  .data(column_labels)
                  .enter().append("text")
@@ -262,16 +286,17 @@ function cell_click()
       var cell = d3.select(this);
       var id = cell.attr("id");
 		var cells_to_select_classes="." + id.replace(/ /g,".");
-		var all_cells = d3.selectAll(cells_to_select_classes); 
+		var all_cells = d3.select(this.my_selector).selectAll(cells_to_select_classes); 
 		all_cells.each(highlight_toggle);
 		transmit_new_highlighting();
    }
 }
 
-function transmit_new_highlighting()
+// function transmit_new_highlighting()
+heatmap.prototype.transmit_new_highlighting = function()
 {
 	var highlighted_segments_this_fig = [];
-   var highlighted_cells = d3.selectAll("rect.cell-highlighted")[0];  // nested selection
+   var highlighted_cells = d3.select(this.my_selector).selectAll("rect.cell-highlighted")[0];  // nested selection
 
 	highlighted_cells.forEach(function (cell){
 	   var datum = d3.select(cell).datum();
@@ -283,7 +308,7 @@ function transmit_new_highlighting()
 		highlighted_segments_this_fig.push(segment_id);
 	});
 
-	update_highlighting(my_selector, highlighted_segments_this_fig);
+	update_highlighting(this.my_selector, highlighted_segments_this_fig);
    
 }
 
@@ -312,7 +337,7 @@ function highlight_by_header() {
       var id = row_or_col_label.attr("id");
 		var cells_to_select_classes="." + id.replace(/ /g,".");
 		// console.log(cells_to_select_classes);
-		var all_cells = d3.selectAll(cells_to_select_classes); 
+		var all_cells = d3.select(this.my_selector).selectAll(cells_to_select_classes); 
 
 		if (turn_on_highlighting)
 		{
@@ -388,11 +413,10 @@ function highlight_off()
    }
 }
 
-
 function fade_all() {
-   // clear all highlighting
-   d3.selectAll(".cell-highlighted").attr("class", "cell");
+   d3.selectAll(".cell-highlighted").each(highlight_off);
 }
+
 
 // tooltip scheme adapted from: http://bl.ocks.org/mbostock/1087001
 function tooltip_mouseover(cell_value) {
