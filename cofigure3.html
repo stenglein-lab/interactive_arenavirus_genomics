@@ -33,8 +33,8 @@
 </style>
 <body onload="load()">
 
-<!-- <script src="./d3/d3.min.js"></script> -->
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="./d3/d3.min.js"></script> 
+<!-- <script src="http://d3js.org/d3.v3.min.js"></script> -->
 <script src="http://d3js.org/topojson.v1.min.js"></script>
 <script src="./newick.js"></script>
 <script src="./heatmap.js"></script>
@@ -95,7 +95,6 @@ function render_heatmap(container_id)
 {
 	clear(container_id);
 	var heatmap_fig = new heatmap(container_id);
-	console.dir(heatmap_fig);
 	heatmap_fig.render();
 	figures[container_id] = heatmap_fig;
 	// console.log("figure for container " + container_id + " -> ");
@@ -149,8 +148,11 @@ function render_cophylogeny(container_id, segment_id)
       h = 1040;
    }
 	clear(container_id);
-	var cophylogeny_fig = cophylogeny.render(container_id, newick_file_1, newick_file_2, w, h);
+	var cophylogeny_fig = new cophylogeny(container_id);
+	cophylogeny_fig.render(newick_file_1, newick_file_2, w, h);
 	figures[container_id] = cophylogeny_fig;
+	// var cophylogeny_fig = cophylogeny.render(container_id, newick_file_1, newick_file_2, w, h);
+	// figures[container_id] = cophylogeny_fig;
 }
 
 function load()

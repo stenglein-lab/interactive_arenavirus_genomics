@@ -9,7 +9,11 @@ if (!d3) { throw "error: d3.js is required but not included"};
 // anonymous function wrapper
 (function() {
 
-cophylogeny = {}; 
+cophylogeny = function(selector) {
+ this.my_selector = selector;
+ this.transmit_new_highlighting = transmit_new_highlighting;
+ this.highlight_by_id = highlight_by_id;
+}; 
 
 var my_selector;
 
@@ -37,7 +41,7 @@ var color_scheme = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#fdbf6f",
 
 // cophylogeny.my_selector;
 
-cophylogeny.update_highlighted_segments = function(selector){
+cophylogeny.prototype.update_highlighted_segments = function(selector){
 	console.log ("updating cophylogeny highlighting for container: " + selector);
 	// first, turn off all highlighting, then turn back on as appropriate
    var all_bridges = d3.select(selector).select("#bridge_g").selectAll("path")[0]; // nested selections --> array of arrays hence extra [0]
@@ -57,11 +61,14 @@ cophylogeny.update_highlighted_segments = function(selector){
 }
 
 // selector is the svg element upon which to draw the cophylogeny
-cophylogeny.render = function(selector, newick_file_1, newick_file_2, width, height)
+// cophylogeny.prototype.render = function(selector, newick_file_1, newick_file_2, width, height)
+cophylogeny.prototype.render = function(newick_file_1, newick_file_2, width, height)
 {
-	my_selector = selector;
+	// my_selector = selector;
 
-	var sel = d3.select(selector);
+	var cophy_obj = this;
+
+	var sel = d3.select(this.my_selector);
    var w = width || sel.style('width') || sel.attr('width');
    var h = height || sel.style('height') || sel.attr('height');
 
@@ -85,7 +92,6 @@ cophylogeny.render = function(selector, newick_file_1, newick_file_2, width, hei
 	// use everything before first "."
 	tree1_name = newick_file_1.match(/\w+/)[0].toUpperCase();
 	tree2_name = newick_file_2.match(/\w+/)[0].toUpperCase();
-	// console.log ("nf1: " + newick_file_1 + "t1n: " + tree1_name);
 
    // here, parse newick files, by async http requests
    var remaining = 2; // necessary b/c requests are asynchronous
@@ -95,14 +101,14 @@ cophylogeny.render = function(selector, newick_file_1, newick_file_2, width, hei
    {
       if (error) return console.warn(error);
       newick_string_1 = parsed_text;
-      if (!--remaining) parse_newick_strings();
+      if (!--remaining) parse_newick_strings(cophy_obj);
    });
    // parse text file for second tree (right tree) 
    d3.text(newick_file_2, function(error, parsed_text)
    {
       if (error) return console.warn(error);
       newick_string_2 = parsed_text;
-      if (!--remaining) parse_newick_strings();
+      if (!--remaining) parse_newick_strings(cophy_obj);
    });
 
    return this;
@@ -110,21 +116,27 @@ cophylogeny.render = function(selector, newick_file_1, newick_file_2, width, hei
 } // end load()
 
 // this function parses the newick strings and populates data structures
-function parse_newick_strings()
+function parse_newick_strings(cophy_obj)
 {
    // parse plain text newick format trees and convert to tree data structures
    var newick_1 = Newick.parse(newick_string_1);
    var newick_2 = Newick.parse(newick_string_2);
 
 	// actually draw the trees
-	render_trees(newick_1, newick_2);
+	render_trees(newick_1, newick_2, cophy_obj);
 }
 
 // this function renders the 2 trees
-function render_trees(newick_1, newick_2)
+function render_trees(newick_1, newick_2, cophy_obj)
 {
 
-	// console.log("rendering trees");
+	console.log("rendering trees");
+	console.log("this: ");
+	console.dir(this);
+	console.log("cophy_obj: ");
+	console.dir(cophy_obj);
+
+	var sel = cophy_obj.my_selector;
 
    // several functions copied from:
    // from: https://gist.github.com/kueda/1036776
@@ -175,13 +187,15 @@ function render_trees(newick_1, newick_2)
    // this function sets up mouse events for nodes
    function styleTreeNodes(selection)
    {
+		console.log("c_o: " + cophy_obj);
+		console.dir( cophy_obj);
       selection.selectAll('g.leaf.node')
          .append("svg:circle")
          .attr("r", 5)
          .attr('stroke', "none")
          .attr('fill', 'none')
          .attr("pointer-events", "all") // enable mouse events to be detected even though no fill
-         .on("click", highlight_from_node());
+         .on("click", highlight_from_node(cophy_obj));
 
       selection.selectAll('g.inner.node')
          .append("svg:circle")
@@ -374,7 +388,7 @@ function render_trees(newick_1, newick_2)
       // .style("cursor", "default") // make it not be a text cursor
       // .attr("pointer-events", "all") 
       .text(function(d) { return d.name.replace(/'/g, "").replace("snake","").replace(/[SL]/, "").replace("_", "-"); })
-		.on("click", highlight_from_node());
+		.on("click", highlight_from_node(cophy_obj));
 
    // add labels to nodes
    tree2_g.selectAll('g.leaf.node')
@@ -385,7 +399,7 @@ function render_trees(newick_1, newick_2)
       // .style("cursor", "default") // make it not be a text cursor
       // .attr("pointer-events", "all") 
       .text(function(d) { return d.name.replace(/'/g, "").replace("snake","").replace(/[SL]/, "").replace("_", "-"); })
-		.on("click", highlight_from_node());
+		.on("click", highlight_from_node(cophy_obj));
 
    // draw bridging lines
    tree1_nodes.forEach(function(n)
@@ -434,7 +448,7 @@ function render_trees(newick_1, newick_2)
 			    }
 			 })
 			// .on("click", highlight_toggle); 
-			.on("click", highlight_from_node); 
+			.on("click", highlight_from_node(cophy_obj)); 
    });
 } // end render_trees()
 
@@ -448,14 +462,15 @@ function fade_all()
 
 // this function will highlight a bridge line
 // when user mouseovers a node
-function highlight_from_node()
+function highlight_from_node(cophy_obj)
 {
    return function()
    {
+	   console.log("Cophy_obj: " + cophy_obj);
       var node = d3.select(this).datum();
       var node_id = node.name;
-      highlight_by_id(node_id);
-		transmit_new_highlighting();
+      cophy_obj.highlight_by_id(node_id);
+		cophy_obj.transmit_new_highlighting();
    }
 };
 
@@ -495,6 +510,9 @@ function highlight_off()
 
 function transmit_new_highlighting()
 {
+	console.log("this: ");
+	console.dir(this);
+	var my_selector = this.my_selector;
 	console.log ("my_selector: " + my_selector);
    var highlighted_segments_this_fig = [];
    var highlighted_segs = d3.select(my_selector).selectAll(".bridge-highlighted")[0];  // nested selection

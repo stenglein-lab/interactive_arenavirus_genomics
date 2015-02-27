@@ -6,9 +6,9 @@ if (!d3) { throw "error: d3.js is required but not included"};
 
 heatmap = function(selector) {
    this.my_selector = selector;
+   this.transmit_new_highlighting = transmit_new_highlighting;
+	// this.update_highlighted_segments(selector);
 }
-
-// heatmap = {};
 
 // global vars
 
@@ -24,8 +24,6 @@ var l_heatmap_data = [];
 
 var tooltip_div;
 
-// var my_selector; 
-
 // read these data files immediately because asynchronous
 read_heatmap_data("./s_heatmap_data.txt", s_heatmap_data, s_column_labels, s_row_labels, "S"); 
 read_heatmap_data("./l_heatmap_data.txt", l_heatmap_data, l_column_labels, l_row_labels, "L"); 
@@ -34,7 +32,7 @@ read_heatmap_data("./l_heatmap_data.txt", l_heatmap_data, l_column_labels, l_row
 heatmap.prototype.update_highlighted_segments = function(selector) {
 
 	console.log ("highlighting heatmap cells " + highlighted_segments);
-	fade_all();
+	fade_all(selector);
 
 	if (highlighted_segments.length > 0)
 	{
@@ -94,13 +92,15 @@ heatmap.prototype.render = function() {
    
 	// g to group objects
    var g = svg.append("g");
+
+   var heatmap_obj = this;
    
    // big rectangle covering whole drawing area
    g.append("rect")
        .attr("class", "background")
        .attr("width", width)
        .attr("height", height)
-   	 .on("click", fade_all); // clear highlighted cells if click outside of heatmaps 
+   	 .on("click", fade_all(this.my_selector)); // clear highlighted cells if click outside of heatmaps 
    
    	// color scales and thresholds
       var bins = [ 0.01,  0.1, 0.25, 0.5, 1]; 
@@ -122,12 +122,14 @@ heatmap.prototype.render = function() {
     .attr("class", "tooltip")
     .style("opacity", 1e-6);
 
-	// actually draw heatmaps
-	render_heatmap(s_heatmap_data, bins, blue_colors, s_column_labels, s_row_labels, s_offset, "S");
-	// render_heatmap(l_heatmap_data, bins, red_colors, l_column_labels, l_row_labels, l_offset, "L");
-	render_heatmap(l_heatmap_data, bins, red_colors, l_column_labels, null, l_offset, "L");
 
-   function render_heatmap(heatmap_data, bins, colors, column_labels, row_labels, x_offset, label)
+	// actually draw heatmaps
+	render_one_heatmap(s_heatmap_data, bins, blue_colors, s_column_labels, s_row_labels, s_offset, "S", heatmap_obj);
+	// render_heatmap(l_heatmap_data, bins, red_colors, l_column_labels, l_row_labels, l_offset, "L");
+	render_one_heatmap(l_heatmap_data, bins, red_colors, l_column_labels, null, l_offset, "L", heatmap_obj);
+
+   // heatmap.prototype.render_one_heatmap = function (heatmap_data, bins, colors, column_labels, row_labels, x_offset, label)
+   function render_one_heatmap(heatmap_data, bins, colors, column_labels, row_labels, x_offset, label, heatmap_obj)
    {
 		var g = svg.append("g");
 
@@ -165,7 +167,7 @@ heatmap.prototype.render = function() {
                  .attr("id", function(d, i) { return "h" + label + " c" + i ; })
                  .attr("class", function (d, i) { return "column_labels" + " h" + label + " c" + i ;})
                  .text(function(d,i) { return (d); })
-					  .on("click", highlight_by_header())
+					  .on("click", highlight_by_header(heatmap_obj))
 					  // .on("mouseover", highlight_by_header())
 					  // .on("mouseout", highlight_by_header());
 
@@ -181,7 +183,7 @@ heatmap.prototype.render = function() {
                     .attr("id", function(d, i) { return "r" + i ; })
                     .attr("class", function (d, i) { return "row_labels" + " h" + label + " r" + i ;})
                     .text(function(d,i) { return (d); })
-					     .on("click", highlight_by_header())
+					     .on("click", highlight_by_header(heatmap_obj))
    					  // .on("mouseover", highlight_by_header())
    					  // .on("mouseout", highlight_by_header());
 		} 
@@ -197,10 +199,13 @@ heatmap.prototype.render = function() {
                  .attr("width", cell_width)
                  .attr("height", cell_height)
                  .style("fill", function(d) { return colorScale(d.value); })
-   				  .on("click", cell_click())
+   				  .on("click", cell_click(heatmap_obj))
+   				  // .on("click", cell_click())
    				  .on("mouseover", cell_mouseover())
    				  .on("mouseout", cell_mouseout());
    }
+
+	this.update_highlighted_segments(this.my_selector);
 
    return this;
 } // end heatmap.render
@@ -279,24 +284,30 @@ function cell_mouseout()
    }
 }
 
-function cell_click() 
+// function cell_click() 
+function cell_click(heatmap_obj) 
 {
    return function()
    {
-      var cell = d3.select(this);
-      var id = cell.attr("id");
-		var cells_to_select_classes="." + id.replace(/ /g,".");
-		var all_cells = d3.select(this.my_selector).selectAll(cells_to_select_classes); 
-		all_cells.each(highlight_toggle);
-		transmit_new_highlighting();
+   var cell = d3.select(this);
+   var id = cell.attr("id");
+	var cells_to_select_classes="." + id.replace(/ /g,".");
+	var all_cells = d3.select(heatmap_obj.my_selector).selectAll(cells_to_select_classes); 
+	all_cells.each(highlight_toggle);
+	// transmit_new_highlighting(heatmap_obj);
+	heatmap_obj.transmit_new_highlighting();
    }
 }
 
-// function transmit_new_highlighting()
-heatmap.prototype.transmit_new_highlighting = function()
+// function transmit_new_highlighting(heatmap_obj)
+// heatmap.prototype.transmit_new_highlighting = function () 
+function transmit_new_highlighting()
 {
+   console.log("this5:" );
+   console.dir(this);
 	var highlighted_segments_this_fig = [];
-   var highlighted_cells = d3.select(this.my_selector).selectAll("rect.cell-highlighted")[0];  // nested selection
+   var my_selector = this.my_selector;
+   var highlighted_cells = d3.select(my_selector).selectAll("rect.cell-highlighted")[0];  // nested selection
 
 	highlighted_cells.forEach(function (cell){
 	   var datum = d3.select(cell).datum();
@@ -304,15 +315,15 @@ heatmap.prototype.transmit_new_highlighting = function()
 	   var col = datum.col + 1;
 	   var segment = datum.segment;
 	   var segment_id = "snake" + row + "_" + segment + col;
-	   // console.log(segment_id);
+	   console.log(segment_id);
 		highlighted_segments_this_fig.push(segment_id);
 	});
 
-	update_highlighting(this.my_selector, highlighted_segments_this_fig);
+	update_highlighting(my_selector, highlighted_segments_this_fig);
    
 }
 
-function highlight_by_header() {
+function highlight_by_header(heatmap_obj) {
 
    return function()
    {
@@ -337,7 +348,7 @@ function highlight_by_header() {
       var id = row_or_col_label.attr("id");
 		var cells_to_select_classes="." + id.replace(/ /g,".");
 		// console.log(cells_to_select_classes);
-		var all_cells = d3.select(this.my_selector).selectAll(cells_to_select_classes); 
+		var all_cells = d3.select(heatmap_obj.my_selector).selectAll(cells_to_select_classes); 
 
 		if (turn_on_highlighting)
 		{
@@ -348,7 +359,7 @@ function highlight_by_header() {
 		   all_cells.each(highlight_off);
 		}
 
-		transmit_new_highlighting();
+		heatmap_obj.transmit_new_highlighting();
    }
 }
 
@@ -356,9 +367,11 @@ function highlight_toggle()
 {
    var currentClass = d3.select(this).attr("class");
 
+	console.log ("this 1: " );
+	console.dir (this);
 	var datum = d3.select(this).datum();
 	var cell_value = datum.value;
-	console.log ("cell_value: " + cell_value);
+	// console.log ("cell_value: " + cell_value);
 	if (cell_value === 0)
 	{
 	   // don't highlight an "empty" cell
@@ -413,8 +426,16 @@ function highlight_off()
    }
 }
 
-function fade_all() {
-   d3.selectAll(".cell-highlighted").each(highlight_off);
+function fade_all(selector) {
+	console.log("fade_all: " + selector);
+   if (selector)
+   {
+      d3.select(selector).selectAll(".cell-highlighted").each(highlight_off);
+   }
+   else
+   {
+      d3.selectAll(".cell-highlighted").each(highlight_off);
+   }
 }
 
 
@@ -433,6 +454,10 @@ function tooltip_mouseout() {
       .duration(100)
       .style("opacity", 1e-6);
 }
+
+// 
+
+// }  // end heatmap constructor
 
 }());
 
