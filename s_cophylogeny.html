@@ -48,6 +48,7 @@ function render_cophylogeny_L(container_id)
 
 function render_cophylogeny(container_id, segment_id)
 {
+	console.log("container_id: " + container_id);
 	var container_sel = d3.select(container_id);
    var w = container_sel.style("width");
 	w = parseInt(w);
@@ -68,12 +69,25 @@ function render_cophylogeny(container_id, segment_id)
       h = 1200;
    }
 	clear(container_id);
-	cophylogeny.render(container_id, newick_file_1, newick_file_2, w, h);
+	// cophylogeny.render(container_id, newick_file_1, newick_file_2, w, h);
+   var cophylogeny_fig = new cophylogeny(container_id);
+	cophylogeny_fig.render(newick_file_1, newick_file_2, w, h);
+	figures[container_id] = cophylogeny_fig;
+
+}
+
+function clear(selector)
+{
+   selector = selector.replace("#",""); // # not necessary for getElementById (only for css/d3)
+	   var myNode = document.getElementById(selector);
+		   while (myNode.firstChild) {
+			       myNode.removeChild(myNode.firstChild);
+       }
 }
 
 function load()
 {
-   render_cophylogeny_S("container");
+   render_cophylogeny_S("#container");
 }
 
 </script>
