@@ -9,6 +9,8 @@
 
 // <script src="./queue.js"> </script>
 
+if (!d3) { throw "error: d3.js is required but not included"};
+
 (function() {
 
 fasta = {};
@@ -22,20 +24,44 @@ fasta.seqs = {};
 fasta.render = function(selector)
 {
 	var sel = d3.select(selector);
-   sel.append("pre").text(generate_fasta());
+   sel.append("pre").attr("class", "fasta_pre").text(generate_fasta());
+	return this;
 };
+
+fasta.update_highlighted_segments = function(selector){
+	clear(selector);
+   fasta.render(selector);
+}
 
 function generate_fasta()
 {
-	// parse_fasta();
-
-	// return highlighted_segments.toString();
 	var fasta_string = "";
-	highlighted_segments.forEach(function(seg_id)
+
+	// only a subset will be displayed
+	if (highlighted_segments.length > 0)
 	{
-	   var seq = fasta.seqs[seg_id];
-		fasta_string = fasta_string + ">" + seg_id + "\n" + seq + "\n";
-	});
+	   highlighted_segments.forEach(function(seg_id)
+	   {
+	      var seq = fasta.seqs[seg_id];
+		   if (!seq)
+		   {
+		      console.log ("no sequence available for segment ID: " + seg_id);
+		   }
+		   else
+		   {
+		      fasta_string = fasta_string + ">" + seg_id + "\n" + seq + "\n";
+		   }
+	   });
+	}
+	else
+	{
+	   // display all sequences 
+	   var seg_ids = Object.keys(fasta.seqs);
+		seg_ids.forEach(function(seg_id){
+         var seq = fasta.seqs[seg_id];
+		   fasta_string = fasta_string + ">" + seg_id + "\n" + seq + "\n";
+	   });
+	}
 	return fasta_string;
 }
 
@@ -44,7 +70,11 @@ function parse_fasta()
    if (!fasta.parse_started)
 	{
 		fasta.parse_started = 1;
-      d3.text("./segment_sequences.fasta", function(error, parsed_text)
+
+	   var fasta_file = "./segment_sequences.fasta";
+	   // console.log ("parsing fasta file: " + fasta_file);
+
+      d3.text(fasta_file, function(error, parsed_text)
       {
          if (error) return console.warn(error);
 

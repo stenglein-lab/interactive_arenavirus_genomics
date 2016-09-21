@@ -6,10 +6,18 @@
 	pointer-events: all;
 }
 
-.column_labels {
-   font-size: 12px;
+.column_labels, .column_labels_highlighted {
+   font-size: 10px;
    font-family: Helvetica, sans-serif;
 	text-anchor: middle;
+	cursor: default; 
+	pointer-events: all;
+}
+
+.row_labels, .row_labels_highlighted {
+   font-size: 10px;
+   font-family: Helvetica, sans-serif;
+	text-anchor: left;
 	cursor: default; 
 	pointer-events: all;
 }
@@ -22,7 +30,21 @@
 
 .cell-highlighted {
   fill: white;
-  stroke: #ccc;
-  stroke-width: 0.5px;
+  stroke: #00ff7f;
+  stroke-width: 2px;
+}
+
+div.tooltip {
+  position: absolute;
+  text-align: center;
+  width: 40px;
+  height: 18px;
+  padding: 0px;
+  font-size: 12px;
+  font-family: Helvetica, sans-serif;
+  background: #eee;
+  border: solid 1px #aaa;
+  border-radius: 5px;
+  pointer-events: none;
 }
 

@@ -1,8 +1,16 @@
 /* heatmap.js */
 
+if (!d3) { throw "error: d3.js is required but not included"};
+
 (function() {
 
-heatmap = {};
+heatmap = function(selector) {
+   this.my_selector = selector;
+   this.transmit_new_highlighting = transmit_new_highlighting;
+	// this.update_highlighted_segments(selector);
+}
+
+// global vars
 
 // column labels
 var s_column_labels = [];
@@ -14,49 +22,87 @@ var l_row_labels = [];
 var s_heatmap_data = [];
 var l_heatmap_data = [];
 
-read_heatmap_data("./l_heatmap_data.txt", l_heatmap_data, l_column_labels, l_row_labels); 
-read_heatmap_data("./s_heatmap_data.txt", s_heatmap_data, s_column_labels, s_row_labels); 
+var tooltip_div;
+
+// read these data files immediately because asynchronous
+read_heatmap_data("./s_heatmap_data.txt", s_heatmap_data, s_column_labels, s_row_labels, "S"); 
+read_heatmap_data("./l_heatmap_data.txt", l_heatmap_data, l_column_labels, l_row_labels, "L"); 
+
+// update segments based on other interactive figure's highlighting
+heatmap.prototype.update_highlighted_segments = function(selector) {
+
+	console.log ("highlighting heatmap cells " + highlighted_segments);
+	fade_all(selector);
+
+	if (highlighted_segments.length > 0)
+	{
+	   highlighted_segments.forEach(function(seg_id){
+			// convert segment id to heatmap/column/row class encoding
+			var tokens = seg_id.split("_");
+			var snake_id = tokens[0].replace("snake", "");
+			var seg_id = tokens[1].match(/[SL]/)[0]; 
+			var genotype = tokens[1].replace(/[SL]/, "");
+			var cell_id = "h" + seg_id + " c" + (genotype - 1) + " r" + (snake_id - 1);
+		   var cells_to_select_classes="." + cell_id.replace(/ /g,".");
+		   // console.log(cells_to_select_classes);
+		   var all_cells = d3.select(selector).selectAll(cells_to_select_classes); 
+		   all_cells.each(highlight_on);
+      });
+	}
+}
 
 // function to render heatmaps
-heatmap.render = function(selector) {
+// heatmap.render = function(selector) {
+heatmap.prototype.render = function() {
 
-
-
-   var sel = d3.select(selector);
+	// my_selector = selector;
+   // var sel = d3.select(selector);
+   var sel = d3.select(this.my_selector);
    var width = sel.style("width");
-   var width = parseInt(width);
+   width = parseInt(width);
+   var padding = sel.style("padding-left");
+   padding = parseInt(padding);
+	width = width - (2 * padding);
    // TODO: what height to use?
-   var height = 500;
+   var height = 700;
 
-	// how wide should each column be?
+	// calculate how tall and wide each cell should be based on available drawing area
+
 	// define width (in column units) of space for labels and spacer b/t 2 heatmaps
 	var label_columns = 4;
-	var spacer_columns = 2;
+	var spacer_columns = 1;
+
+	// how many cols ?
    var number_columns = s_column_labels.length + l_column_labels.length + (label_columns * 2) + spacer_columns;
 	var s_fraction = (s_column_labels.length + label_columns) / number_columns;
 	var l_fraction = (l_column_labels.length + label_columns) / number_columns;
 	var column_width = Math.floor(width / number_columns);
 	var s_offset = (label_columns/number_columns) * width;
-	var l_offset = (s_fraction + (spacer_columns/number_columns) + (label_columns/number_columns)) * width;
+	// var l_offset = (s_fraction + (spacer_columns/number_columns) + (label_columns/number_columns)) * width;
+	var l_offset = (s_fraction + (spacer_columns/number_columns)) * width;
 
-	// how high should each cell be?
+	// how tall should each cell be?
 	var number_rows = s_row_labels.length;
 	var row_height = Math.floor((height-150) / number_rows);
    
+	// create svg element on which to draw
    var svg = sel.append("svg")
        .attr("width", width)
        .attr("height", height);
    
+	// g to group objects
    var g = svg.append("g");
+
+   var heatmap_obj = this;
    
    // big rectangle covering whole drawing area
    g.append("rect")
        .attr("class", "background")
        .attr("width", width)
        .attr("height", height)
-   	 .on("click", fade_all); // clear highlighted cities if click anywhere else
+   	 .on("click", fade_all(this.my_selector)); // clear highlighted cells if click outside of heatmaps 
    
-   	// color scale
+   	// color scales and thresholds
       var bins = [ 0.01,  0.1, 0.25, 0.5, 1]; 
       var red_colors  = [ 'rgb(255, 255, 255)',
                           'rgb(242, 218, 200)',
@@ -71,10 +117,19 @@ heatmap.render = function(selector) {
                           'rgb(71, 99, 174)',
                           'rgb(25, 81, 64)' ];
 
-	render_heatmap(s_heatmap_data, bins, blue_colors, s_column_labels, s_row_labels, s_offset, "S");
-	render_heatmap(l_heatmap_data, bins, red_colors, l_column_labels, l_row_labels, l_offset, "L");
+   // this is a div element that will show via tooltip values of cells
+   tooltip_div = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 1e-6);
 
-   function render_heatmap(heatmap_data, bins, colors, column_labels, row_labels, x_offset, label)
+
+	// actually draw heatmaps
+	render_one_heatmap(s_heatmap_data, bins, blue_colors, s_column_labels, s_row_labels, s_offset, "S", heatmap_obj);
+	// render_heatmap(l_heatmap_data, bins, red_colors, l_column_labels, l_row_labels, l_offset, "L");
+	render_one_heatmap(l_heatmap_data, bins, red_colors, l_column_labels, null, l_offset, "L", heatmap_obj);
+
+   // heatmap.prototype.render_one_heatmap = function (heatmap_data, bins, colors, column_labels, row_labels, x_offset, label)
+   function render_one_heatmap(heatmap_data, bins, colors, column_labels, row_labels, x_offset, label, heatmap_obj)
    {
 		var g = svg.append("g");
 
@@ -87,10 +142,8 @@ heatmap.render = function(selector) {
 
    	var heatmap_height = height;
    	var heatmap_width = width;
-   	// var cell_width = heatmap_width / ( 2 * column_labels.length);
    	var cell_width = column_width;
    	var cell_height = row_height;
-
    
 		var label_x = x_offset + (column_labels.length / 2) * cell_width;
 		var label_text = label + " segment genotype"
@@ -104,6 +157,7 @@ heatmap.render = function(selector) {
 		  .text(label_text);
 
    	// add column labels
+      // var col_labels = g.select(my_selector).selectAll(".column_labels")
       var col_labels = g.selectAll(".column_labels")
                  .data(column_labels)
                  .enter().append("text")
@@ -113,7 +167,26 @@ heatmap.render = function(selector) {
                  .attr("id", function(d, i) { return "h" + label + " c" + i ; })
                  .attr("class", function (d, i) { return "column_labels" + " h" + label + " c" + i ;})
                  .text(function(d,i) { return (d); })
-					  .on("click", highlight_by_col());
+					  .on("click", highlight_by_header(heatmap_obj))
+					  // .on("mouseover", highlight_by_header())
+					  // .on("mouseout", highlight_by_header());
+
+      // add row labels
+		if (row_labels)
+		{
+         var row_labels = g.selectAll(".row_labels")
+                    .data(row_labels)
+                    .enter().append("text")
+                    .attr("x", function(d, i) { return 0; })
+                    .attr("y", function(d, i) { var y = y_offset + (i * cell_height) + (cell_height / 2);  return y; })
+                    // .attr("id", function(d, i) { return "h" + label + " r" + i ; })
+                    .attr("id", function(d, i) { return "r" + i ; })
+                    .attr("class", function (d, i) { return "row_labels" + " h" + label + " r" + i ;})
+                    .text(function(d,i) { return (d); })
+					     .on("click", highlight_by_header(heatmap_obj))
+   					  // .on("mouseover", highlight_by_header())
+   					  // .on("mouseout", highlight_by_header());
+		} 
 
    	// lay out the heatmap
       var heatmap_rects = g.selectAll(".cells")
@@ -122,16 +195,28 @@ heatmap.render = function(selector) {
                  .attr("x", function(d) { return x_offset + d.col * cell_width; })
                  .attr("y", function(d) { return y_offset + (d.row * cell_height); })
                  .attr("class", function(d) { return "cell" + " h" + label + " c" + d.col + " r" + d.row; })
-                 // .attr("class", "cell") 
-                 .attr("id", function(d) { return " h" + label + " c" + d.col + " r" + d.row; })
+                 .attr("id", function(d) { return "h" + label + " c" + d.col + " r" + d.row; })
                  .attr("width", cell_width)
                  .attr("height", cell_height)
-                 .style("fill", function(d) { return colorScale(d.value); });
+                 .style("fill", function(d) { return colorScale(d.value); })
+   				  .on("click", cell_click(heatmap_obj))
+   				  // .on("click", cell_click())
+   				  .on("mouseover", cell_mouseover())
+   				  .on("mouseout", cell_mouseout());
    }
+
+	this.update_highlighted_segments(this.my_selector);
+
+   return this;
 } // end heatmap.render
 
 
-function read_heatmap_data(file, heatmap_data, column_labels, row_labels)
+// this function reads tab-delimited data files containing heatmap data
+// the first row of this file should contain column labels 
+// and the first column should contain row labels
+// the data will be stored in the heatmap_data object passed as arg
+// row and col labels stored in arrays passed as args
+function read_heatmap_data(file, heatmap_data, column_labels, row_labels, segment)
 {
    d3.text(file, function(text) {
 
@@ -142,7 +227,7 @@ function read_heatmap_data(file, heatmap_data, column_labels, row_labels)
       {
         if (row_ctr === -1)
         {
-           d.shift(); // pop off empty first cell w/out header
+           d.shift(); // pop off empty upper-left cell w/out header
 			  // copy column labels
 			  var i = 0;
 			  d.forEach(function(label){
@@ -162,7 +247,8 @@ function read_heatmap_data(file, heatmap_data, column_labels, row_labels)
               new_cell.col_label = column_labels[col_ctr];
               new_cell.row = row_ctr;
               new_cell.col = col_ctr;
-              new_cell.value = v;
+              new_cell.value = +v; // force to numeric value
+              new_cell.segment = segment;
               col_ctr += 1;
               heatmap_data.push(new_cell);
               // better to do this as a 2d array?
@@ -173,36 +259,107 @@ function read_heatmap_data(file, heatmap_data, column_labels, row_labels)
    }); // end d3.text
 } // end read_heatmap_data
 
-function highlight_by_col_X() {
-
+function cell_mouseover()
+{
    return function()
    {
-      var col = d3.select(this);
-      var col_id = col.attr("id");
-      var col_class = col.attr("class");
-      console.log ("highlighting column (id): " + col_id);
-      console.log ("highlighting column (class): " + col_class);
-		var cells_to_select_classes=".cell." + col_id.replace(/ /g,".");
-      console.log ("highlighting column (classes): " + cells_to_select_classes);
+      var cell = d3.select(this);
+		// cell.each(highlight_toggle);
 
-		// var all_cells = d3.selectAll(".cell"); 
-		var all_cells = d3.selectAll(cells_to_select_classes); 
-      console.log ("cells_to_hightlight: " + all_cells);
-		// all_cells.each().attr("class", function { 
-		   // var existing_classes = this.attr("class")
+		// tooltip
+      var cell_value = cell.datum().value;
+		cell_value = parseFloat(cell_value).toFixed(2);
+		tooltip_mouseover(cell_value);
    }
 }
 
-function highlight_by_col() {
+function cell_mouseout()
+{
+   return function()
+   {
+      var cell = d3.select(this);
+		// cell.each(highlight_toggle);
+
+		tooltip_mouseout();
+   }
+}
+
+// function cell_click() 
+function cell_click(heatmap_obj) 
+{
+   return function()
+   {
+   var cell = d3.select(this);
+   var id = cell.attr("id");
+	var cells_to_select_classes="." + id.replace(/ /g,".");
+	var all_cells = d3.select(heatmap_obj.my_selector).selectAll(cells_to_select_classes); 
+	all_cells.each(highlight_toggle);
+	// transmit_new_highlighting(heatmap_obj);
+	heatmap_obj.transmit_new_highlighting();
+   }
+}
+
+// function transmit_new_highlighting(heatmap_obj)
+// heatmap.prototype.transmit_new_highlighting = function () 
+function transmit_new_highlighting()
+{
+   console.log("this5:" );
+   console.dir(this);
+	var highlighted_segments_this_fig = [];
+   var my_selector = this.my_selector;
+   var highlighted_cells = d3.select(my_selector).selectAll("rect.cell-highlighted")[0];  // nested selection
+
+	highlighted_cells.forEach(function (cell){
+	   var datum = d3.select(cell).datum();
+	   var row = datum.row + 1; // convert 0-index to 1-index snake/genotype numbering
+	   var col = datum.col + 1;
+	   var segment = datum.segment;
+	   var segment_id = "snake" + row + "_" + segment + col;
+	   console.log(segment_id);
+		highlighted_segments_this_fig.push(segment_id);
+	});
+
+	update_highlighting(my_selector, highlighted_segments_this_fig);
+   
+}
+
+function highlight_by_header(heatmap_obj) {
 
    return function()
    {
-      var col = d3.select(this);
-      var col_id = col.attr("id");
-      var col_class = col.attr("class");
-		var cells_to_select_classes="." + col_id.replace(/ /g,".");
-		var all_cells = d3.selectAll(cells_to_select_classes); 
-		all_cells.each(highlight_toggle);
+      var row_or_col_label = d3.select(this);
+		var currentClass = row_or_col_label.attr("class");
+		var turn_on_highlighting = true;
+
+      if (currentClass.match("highlighted")) {
+		   // in this case, we will turn off highlighting for all cells in row or column
+			turn_on_highlighting = false;
+	      currentClass = currentClass.replace("labels_highlighted", "labels");
+         row_or_col_label.attr("class", currentClass);
+		}
+		else
+		{
+		   // in this case, we will turn on highlighting for all cells in row or column
+			turn_on_highlighting = true;
+	      currentClass = currentClass.replace("labels", "labels_highlighted");
+         row_or_col_label.attr("class", currentClass);
+		}
+
+      var id = row_or_col_label.attr("id");
+		var cells_to_select_classes="." + id.replace(/ /g,".");
+		// console.log(cells_to_select_classes);
+		var all_cells = d3.select(heatmap_obj.my_selector).selectAll(cells_to_select_classes); 
+
+		if (turn_on_highlighting)
+		{
+		   all_cells.each(highlight_on);
+		}
+		else
+		{
+		   all_cells.each(highlight_off);
+		}
+
+		heatmap_obj.transmit_new_highlighting();
    }
 }
 
@@ -210,22 +367,97 @@ function highlight_toggle()
 {
    var currentClass = d3.select(this).attr("class");
 
-	console.log ("currentClass: " + currentClass);
+	console.log ("this 1: " );
+	console.dir (this);
+	var datum = d3.select(this).datum();
+	var cell_value = datum.value;
+	// console.log ("cell_value: " + cell_value);
+	if (cell_value === 0)
+	{
+	   // don't highlight an "empty" cell
+		console.log ("don't highlight an empty cell");
+		return;
+	}
 
+	// toggle highlighting state of cells
    if (currentClass.match("cell-highlighted")) {
       currentClass = currentClass.replace("cell-highlighted", "cell");
       d3.select(this).attr("class", currentClass);
    }
    else {
-		currentClass = currentClass.replace("cell", "cell-highlighted");
+	   currentClass = currentClass.replace("cell", "cell-highlighted");
       d3.select(this).attr("class", currentClass);
    }
 }
 
+function highlight_on()
+{
+   var currentClass = d3.select(this).attr("class");
 
-function fade_all() {
-   // clear all highlighting
-   d3.selectAll(".place-highlighted").attr("class", "place");
+	var datum = d3.select(this).datum();
+	var cell_value = datum.value;
+	if (cell_value === 0)
+	{
+	   // don't highlight an "empty" cell
+		return;
+	}
+
+	// turn on highlighting for cell
+   if (currentClass.match("cell-highlighted")) {
+	    // already on - don't need to do anything
+   }
+   else {
+	   currentClass = currentClass.replace("cell", "cell-highlighted");
+      d3.select(this).attr("class", currentClass);
+   }
 }
 
+function highlight_off()
+{
+   var currentClass = d3.select(this).attr("class");
+
+	// turn off highlighting for cell
+   if (currentClass.match("cell-highlighted")) {
+      currentClass = currentClass.replace("cell-highlighted", "cell");
+      d3.select(this).attr("class", currentClass);
+   }
+   else {
+	    // already on - don't need to do anything
+   }
+}
+
+function fade_all(selector) {
+	console.log("fade_all: " + selector);
+   if (selector)
+   {
+      d3.select(selector).selectAll(".cell-highlighted").each(highlight_off);
+   }
+   else
+   {
+      d3.selectAll(".cell-highlighted").each(highlight_off);
+   }
+}
+
+
+// tooltip scheme adapted from: http://bl.ocks.org/mbostock/1087001
+function tooltip_mouseover(cell_value) {
+  tooltip_div.transition()
+      .duration(100)
+      .style("opacity", 1) 
+      .text(cell_value)
+      .style("left", (d3.event.pageX - 20) + "px")
+      .style("top", (d3.event.pageY + 20) + "px");
+}
+
+function tooltip_mouseout() {
+  tooltip_div.transition()
+      .duration(100)
+      .style("opacity", 1e-6);
+}
+
+// 
+
+// }  // end heatmap constructor
+
 }());
+

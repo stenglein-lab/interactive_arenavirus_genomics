@@ -1,312 +1,26 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
-<style>
- 
-body {
-  font: 14px Comic Sans MS;
-}
-p {
-  margin-top: 6px;
-  margin-bottom: 4px;
-}
-
-.header_p {
-  font: 14px helvetica;
-}
- 
-.axis path, .axis line {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
- 
-.point {
-  fill: steelblue;
-  stroke: #000;
-}
-
-.cov_line_blue {
-  fill: lightsteelblue;
-  stroke: black;
-  stroke-width: 1;
-}
-
-.cov_line {
-  fill: fuchsia;
-  stroke: black;
-  stroke-width: 1;
-}
-
-.ss_line {
-  fill: none;
-  fillx: #E8E8E8;
-  stroke: url(#energy-gradient);
-  stroke-width: 1;
-}
-
-.ss_box {
-  fill: url(#energy-gradient);
-  stroke: black;
-  stroke-width: 1;
-}
-
-.axis tspan {
-  font-size: 10px;
-}
-
-@media print
-{    
-   .no-print, .no-print *
-   {
-   display: none !important;
-   }
-}
- 
-</style>
-<body>
-
-<div class='no-print'>
-<p> 
-   <form id="seg_filter_form">
-      Segments to display filter (leave empty to display all segments): 
-      <input type="text" id="seg_filter_input" name="seg_filter_input" />
-      <input type="button" value="Render" id="render_button" name="render_button"/>
-   </form>
-   <br>
-   <form id="clear_form">
-      <input type="button" value="Clear Display" id="clear_button" name="clear_button"/>
-   </form>
-   <br> Tracks to display:
-   <br>
-   <br> coverage:     <input type="checkbox" id="cov_check" checked>
-   <br> 2˚ structure: <input type="checkbox" id="ss_check" checked>
-   <br>
-   <br>
-</p>
-
-<!-- <p style="page-break-after:always;"></p> -->
-</div>
-
-<script src="http://d3js.org/d3.v3.min.js"></script>
-
-<script>
-
 // main javascript/d3 for rendering cartoons and plots
 // 
 // Mark Stenglein 8/1/2014
 
-var segments_all = [ 
-["snake1_L1"],
-["snake2_L1"],
-["snake3_L1"],
-["snake4_L2"],
-["snake5_L2"],
-["snake6_L2"],
-["snake7_L2"],
-["snake8_L2"],
-["snake9_L2"],
-["snake10_L3"],
-["snake11_L3"],
-["snake12_L3"],
-["snake13_L3"],
-["snake14_L3"],
-["snake15_L3"],
-["snake16_L21"],
-["snake17_L21"],
-["snake18_L7"],
-["snake19_L18"],
-["snake20_L18"],
-["snake21_L18"],
-["snake22_L3"],
-["snake22_L10"],
-["snake22_L11"],
-["snake23_L10"],
-["snake23_L11"],
-["snake24_L2"],
-["snake24_L10"],
-["snake24_L12"],
-["snake25_L7"],
-["snake25_L10"],
-["snake25_L18"],
-["snake26_L7"],
-["snake26_L18"],
-["snake26_L21"],
-["snake27_L2"],
-["snake27_L7"],
-["snake27_L18"],
-["snake27_L21"],
-["snake27_L22"],
-["snake28_L2"],
-["snake28_L5"],
-["snake28_L6"],
-["snake28_L11"],
-["snake28_L18"],
-["snake28_L21"],
-["snake28_L22"],
-["snake29_L5"],
-["snake29_L6"],
-["snake29_L11"],
-["snake29_L18"],
-["snake30_L2"],
-["snake30_L5"],
-["snake30_L11"],
-["snake30_L18"],
-["snake30_L22"],
-["snake31_L2"],
-["snake31_L5"],
-["snake31_L6"],
-["snake31_L11"],
-["snake31_L18"],
-["snake31_L21"],
-["snake31_L22"],
-["snake32_L3"],
-["snake32_L5"],
-["snake32_L6"],
-["snake32_L15"],
-["snake32_L18"],
-["snake32_L21"],
-["snake32_L23"],
-["snake33_L3"],
-["snake33_L4"],
-["snake33_L6"],
-["snake33_L12"],
-["snake33_L15"],
-["snake33_L17"],
-["snake33_L18"],
-["snake33_L19"],
-["snake33_L20"],
-["snake33_L21"],
-["snake34_L3"],
-["snake34_L6"],
-["snake34_L7"],
-["snake34_L9"],
-["snake34_L11"],
-["snake34_L14"],
-["snake34_L17"],
-["snake34_L18"],
-["snake34_L20"],
-["snake34_L21"],
-["snake34_L22"],
-["snake35_L3"],
-["snake35_L8"],
-["snake35_L11"],
-["snake35_L17"],
-["snake35_L18"],
-["snake35_L21"],
-["snake36_L3"],
-["snake36_L11"],
-["snake36_L17"],
-["snake36_L21"],
-["snake37_L3"],
-["snake37_L13"],
-["snake37_L21"],
-["snake38_L3"],
-["snake38_L18"],
-["snake39_L3"],
-["snake39_L18"],
-["snake40_L3"],
-["snake40_L6"],
-["snake40_L7"],
-["snake40_L8"],
-["snake40_L11"],
-["snake40_L19"],
-["snake40_L20"],
-["snake41_L3"],
-["snake41_L6"],
-["snake41_L7"],
-["snake41_L16"],
-["snake41_L18"],
-["snake42_L3"],
-["snake42_L6"],
-["snake42_L7"],
-["snake42_L18"],
-["snake43_L3"],
-["snake43_L6"],
-["snake43_L7"],
-["snake43_L12"],
-["snake43_L18"],
-["snake44_L3"],
-["snake44_L6"],
-["snake44_L7"],
-["snake44_L18"],
-["snake45_L3"],
-["snake45_L7"],
-["snake46_L3"],
-["snake46_L4"],
-["snake46_L6"],
-["snake46_L7"],
-["snake47_L3"],
-["snake47_L4"],
-["snake47_L5"],
-["snake47_L6"],
-["snake47_L7"],
-["snake48_L3"],
-["snake48_L4"],
-["snake48_L6"],
-["snake48_L7"],
-["snake1_S1"],
-["snake2_S1"],
-["snake3_S1"],
-["snake4_S2"],
-["snake5_S2"],
-["snake6_S2"],
-["snake7_S3"],
-["snake8_S6"],
-["snake9_S6"],
-["snake10_S6"],
-["snake11_S6"],
-["snake12_S6"],
-["snake13_S6"],
-["snake14_S6"],
-["snake15_S6"],
-["snake16_S6"],
-["snake17_S6"],
-["snake18_S6"],
-["snake19_S9"],
-["snake20_S9"],
-["snake21_S9"],
-["snake22_S6A"],
-["snake22_S6B"],
-["snake23_S6"],
-["snake24_S6"],
-["snake25_S6"],
-["snake26_S6"],
-["snake26_S7"],
-["snake27_S2"],
-["snake27_S4"],
-["snake27_S9"],
-["snake27_S10"],
-["snake28_S6"],
-["snake29_S6"],
-["snake30_S6"],
-["snake30_S9"],
-["snake31_S6"],
-["snake32_S6"],
-["snake33_S6"],
-["snake34_S6"],
-["snake34_S9"],
-["snake34_S10"],
-["snake34_S11"],
-["snake35_S6"],
-["snake35_S8"],
-["snake36_S6"],
-["snake37_S6"],
-["snake38_S6"],
-["snake39_S6"],
-["snake40_S6"],
-["snake41_S5"],
-["snake41_S6"],
-["snake42_S5"],
-["snake42_S6"],
-["snake43_S6"],
-["snake44_S5"],
-["snake44_S6"],
-["snake45_S5"],
-["snake45_S6"],
-["snake46_S6"],
-["snake47_S6"],
-["snake48_S6"],
-];
+/* segment_cartoons.js */
+
+(function () {
+
+segment_cartoons = {};
+
+var segments_all = [];
+
+
+// read in segment names from file
+d3.text("./segment_names.txt", function(text) {
+  var data = d3.tsv.parseRows(text);
+  data.forEach(function(d){
+     var segment_id = d[0];
+     segments_all.push(segment_id);
+  });
+
+});
+
 
 
 // global vars related to svg plot size
@@ -316,8 +30,17 @@ var plot_margin = {top: 10, right: 40, bottom: 40, left: 50};
 var cartoon_margin = {top: 20, right: 40, bottom: 10, left: 50};
 var margin = plot_margin;
 
+segment_cartoons.render = function(selector)
+{
+
+var sel = d3.select(selector);
+var drawing_area = sel;
+var width = sel.style("width");
+var width = parseInt(width);
+
+
 // svg canvas width for everything
-var svg_width = 1000 - margin.left - margin.right;
+var svg_width = width - margin.left - margin.right;
    
 // y-axis scaling 
 // how tall plots will be in pixels
@@ -328,43 +51,7 @@ var svg_height = plot_canvas_height - margin.top - margin.bottom;
 var segment_count = 0;
 var segments_per_page = 6;
 
-// process input
-d3.select("#render_button").on("click", function() {
-
-  var filter_text = document.getElementById('seg_filter_input').value;
-  console.log("going to render segments with IDs matching : " + filter_text);
-  render_segments(filter_text);
-  });
-
-function clear_displayed_elements()
-{
-  console.log("clearing display...");
-  d3.select("body").selectAll("svg").remove();
-  d3.select("body").selectAll(".header_p").remove();
-}
-
-// refresh
-d3.select("#clear_button").on("click", clear_displayed_elements);
-
-// access this page's query string to get filter 
-// snippet copied from: http://css-tricks.com/snippets/javascript/get-url-variables/
-function getQueryVariable(variable)
-{
-   var query = window.location.search.substring(1);
-   var vars = query.split("&");
-   for (var i=0;i<vars.length;i++) 
-   {
-      var pair = vars[i].split("=");
-      if(pair[0] == variable){return pair[1];}
-   }
-   return(false);
-}
-
-// render segments based on URL query string
-if (query_string_filter = getQueryVariable("seg_filter_input"))
-{
-  render_segments(query_string_filter);
-}
+render_segments();
 
 // render some or all segments
 function render_segments(segment_filter)
@@ -401,7 +88,7 @@ function render_segments(segment_filter)
       if ((segment_count % segments_per_page) === 0)
       {
          console.log("segment " + segment_id + " #: " + segment_count);
-         var pb_p = d3.select("body").append("p").style("page-break-after", "always").style("text-align", "right");
+         var pb_p = drawing_area.append("p").style("page-break-after", "always").style("text-align", "right");
          var page_number = "page " + (segment_count / segments_per_page);
          // uncomment to add page #s to bottom of page
          // pb_p.text( page_number );
@@ -412,7 +99,7 @@ function render_segments(segment_filter)
 function render_segment(segment_id)
 {
    var header_text = "segment " + segment_id;
-   d3.select("body").append("p").text(header_text).attr("class", "header_p")
+   drawing_area.append("p").text(header_text).attr("class", "header_p")
    draw_all(segment_id);
    return;
 }
@@ -430,10 +117,10 @@ function draw_cartoon(segment_id)
    console.log ("drawing genome cartoon for segment " + segment_id  );
    
    var width = svg_width;
-   var height = 40; // don't hardcode
+   var height = 40; // TODO: don't hardcode (or is OK?)
 
    // add a new svg canvas area
-   var svg = d3.select("body").append("svg")
+   var svg = drawing_area.append("svg")
     .attr("width", width + cartoon_margin.left + cartoon_margin.right)
     .attr("height", height + cartoon_margin.top + cartoon_margin.bottom ) 
     .append("g")
@@ -441,6 +128,7 @@ function draw_cartoon(segment_id)
  
     // file w/ annotation data
     var file_name = "210_seg_renamed.tsv"; // TODO - don't hardcode
+    // var tsv_data_file = "http://localhost:8888/" + file_name;
     var tsv_data_file = "./" + file_name;
 
     // read file w/ annotation data
@@ -760,7 +448,7 @@ function draw_plots(segment_id)
    var height = svg_height;
 
    // add a new svg canvas area
-   var svg = d3.select("body").append("svg")
+   var svg = drawing_area.append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
@@ -768,6 +456,7 @@ function draw_plots(segment_id)
  
     var file_name = segment_id + ".tsv";
     // console.log ("opening " + file_name);
+    // var tsv_data_file = "http://localhost:8888/" + file_name;
     var tsv_data_file = "./" + file_name;
 
     // read file w/ coverage data
@@ -1007,5 +696,6 @@ function draw_plots(segment_id)
    }; // end proess_tsv callback
 
 } // end draw_plots
+}
 
-</script>
+}());

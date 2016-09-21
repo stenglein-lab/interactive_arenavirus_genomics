@@ -25,7 +25,8 @@ p {
 }
 
 .cov_line {
-  fill: #E8E8E8;
+  fill: yellow;
+  fillx: #E8E8E8;
   stroke: black;
   stroke-width: 1;
 }

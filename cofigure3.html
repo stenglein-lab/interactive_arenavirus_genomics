@@ -33,8 +33,8 @@
 </style>
 <body onload="load()">
 
-<!-- <script src="./d3/d3.min.js"></script> -->
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="./d3/d3.min.js"></script> 
+<!-- <script src="http://d3js.org/d3.v3.min.js"></script> -->
 <script src="http://d3js.org/topojson.v1.min.js"></script>
 <script src="./newick.js"></script>
 <script src="./heatmap.js"></script>
@@ -58,7 +58,7 @@ function update_highlighting(selector, segment_list)
 	   highlighted_segments = segment_list.slice(0); // copy array
 	}
 
-	console.log("updating highlighting.  Segs:  " +  highlighted_segments);
+	console.log("updating highlighting from container: " + selector + " for segs:  " +  highlighted_segments);
 
 	var containers = Object.keys(figures); 
 	containers.forEach(function(container){
@@ -69,7 +69,7 @@ function update_highlighting(selector, segment_list)
 		else
 		{  
 			// clear(container);
-			console.log("for container: " +  container);
+			console.log ("for container: " + container);
 		   figures[container].update_highlighted_segments(container);
 		}
 	});
@@ -94,7 +94,8 @@ function render_plots(container_id)
 function render_heatmap(container_id)
 {
 	clear(container_id);
-	var heatmap_fig = heatmap.prototype.render(container_id);
+	var heatmap_fig = new heatmap(container_id);
+	heatmap_fig.render();
 	figures[container_id] = heatmap_fig;
 	// console.log("figure for container " + container_id + " -> ");
 	// console.dir(figures[container_id]);
@@ -147,8 +148,11 @@ function render_cophylogeny(container_id, segment_id)
       h = 1040;
    }
 	clear(container_id);
-	var cophylogeny_fig = cophylogeny.render(container_id, newick_file_1, newick_file_2, w, h);
+	var cophylogeny_fig = new cophylogeny(container_id);
+	cophylogeny_fig.render(newick_file_1, newick_file_2, w, h);
 	figures[container_id] = cophylogeny_fig;
+	// var cophylogeny_fig = cophylogeny.render(container_id, newick_file_1, newick_file_2, w, h);
+	// figures[container_id] = cophylogeny_fig;
 }
 
 function load()
@@ -160,21 +164,22 @@ function load()
 function setup_event_handlers()
 {
 	var buttons = { left:  ["heatmap", "plots", "cophylogeny_S", "cophylogeny_L", "map", "fasta"],
+	                middle: ["heatmap", "plots", "cophylogeny_S", "cophylogeny_L", "map", "fasta"],
 	                right: ["heatmap", "plots", "cophylogeny_S", "cophylogeny_L", "map", "fasta"] };
 
-	var sides = ["left", "right"];
+	var sides = ["left", "middle", "right"];
 
 	sides.forEach(function(side){
 	   var side_buttons = buttons[side];
 		side_buttons.forEach(function(button){
-		   var button_id = "#"+side+"_"+button;
-			var sel = d3.select(button_id);
 			var function_name = "render_"+button;
 			var container_id = "#"+side+"_container";
 			var btn_func = function(){
-				return window[function_name](container_id);
+				return window[function_name](container_id );
 			}
 
+		   var button_id = "#"+side+"_"+button;
+			var sel = d3.select(button_id);
 			sel.on("click", btn_func);
 		});
 	});
@@ -224,7 +229,7 @@ function setup_event_handlers()
 <div class="container-fluid">
    <div class="row">
 
-      <div class="col-md-5">
+      <div class="col-md-4">
          <div class="btn-group" id="left_button-group">
             <button type="button" id="left_heatmap" class="btn btn-default">Heatmap </button>
             <button type="button" id="left_plots"   class="btn btn-default">Plots</button>
@@ -243,9 +248,25 @@ function setup_event_handlers()
          </div > 
       </div > 
 
-      <div class="col-md-2">
-		</div>
-      <div class="col-md-5">
+      <div class="col-md-4">
+         <div class="btn-group" id="middle_button_group">
+            <button type="button" id="middle_heatmap" class="btn btn-default">Heatmap</button>
+            <button type="button" id="middle_plots"   class="btn btn-default">Plots</button>
+            <button type="button" id="middle_fasta"   class="btn btn-default">Fasta</button>
+            <button type="button" id="middle_map"     class="btn btn-default">Map</button>
+            <div class="btn-group">
+                <button type="button" data-toggle="dropdown" class="btn btn-default dropdown-toggle">
+                    Co-phylogeny
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                  <li> <a href="javascript:void(0);" id="middle_cophylogeny_S">S segment (GPC/NP)</a></li>
+                  <li> <a href="javascript:void(0);" id="middle_cophylogeny_L">L segment (Z/L)   </a></li>
+                </ul>
+				</div> 
+         </div > 
+      </div > 
+      <div class="col-md-4">
          <div class="btn-group" id="right_button_group">
             <button type="button" id="right_heatmap" class="btn btn-default">Heatmap</button>
             <button type="button" id="right_plots"   class="btn btn-default">Plots</button>
@@ -275,9 +296,11 @@ function setup_event_handlers()
 <!-- empty containers to be populated by various figs -->
 <div class="container-fluid">
    <div class="row">
-      <div class="col-md-6" id="left_container">
+      <div class="col-md-4" id="left_container">
       </div >
-      <div class="col-md-6" id="right_container">
+      <div class="col-md-4" id="middle_container">
+      </div >
+      <div class="col-md-4" id="right_container">
       </div >
    </div>
 </div>

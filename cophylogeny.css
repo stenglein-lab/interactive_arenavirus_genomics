@@ -6,7 +6,7 @@
 
 .node {
    font-family: Helvetica, sans-serif;
-   font-size: 8px;
+   font-size: 9px;
 	cursor: default; 
 	pointer-events: all;
 }
@@ -17,16 +17,26 @@
    stroke-width: 1px;
 }
 
-.bridge {
+.bridge_orig {
    stroke: #E8E8E8;
 	fill: none;
 	stroke-width: 1px;
 }
 
-.bridge-highlighted {
+.bridge-highlighted_orig {
    stroke: red;
 	fill: none;
 	stroke-width: 1.5px;
+}
+
+.bridge {
+	fill: none;
+	stroke-width: 0.75px;
+}
+
+.bridge-highlighted {
+	fill: none;
+	stroke-width: 2.5px;
 }
 
 @media print

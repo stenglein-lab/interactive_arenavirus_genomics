@@ -196,7 +196,7 @@ function setup_event_handlers()
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="javascript:void(0)">Interactive Arenavirus Genomics</a>
+        <a class="navbar-brand" href="javascript:void(0)">TreeTangler</a>
       </div>
       <div id="navbar" class="navbar-collapse collapse">
         <ul class="nav navbar-nav">
@@ -213,26 +213,36 @@ function setup_event_handlers()
 <div class="container-fluid">
    <div class="row">
       <div class="col-md-12"">
-         <H3>Interactive arenavirus genomics (definitely under construction)</H3>
+         <H3>TreeTangler Web Interface</H3>
 			<br>
 			<br>
-      </div >
+      </div>
    </div>
 </div>
 
 
 <div class="container-fluid">
+
+   <div class="row">
+      <div class="col-md-12">
+         <div class="btn-group" id="left_button-group">
+            <label class="btn btn-default">
+                Upload tree files&hellip; <input type="file" style="display: none;">
+            </label>
+            <button type="button" class="btn btn-default">Detangle trees</button>
+         </div >
+      </div >
+   </div >
+
+   <br>
+
    <div class="row">
 
       <div class="col-md-5">
          <div class="btn-group" id="left_button-group">
-            <button type="button" id="left_heatmap" class="btn btn-default">Heatmap </button>
-            <button type="button" id="left_plots"   class="btn btn-default">Plots</button>
-            <button type="button" id="left_fasta"   class="btn btn-default">Fasta   </button>
-            <button type="button" id="left_map"     class="btn btn-default">Map     </button>
             <div class="btn-group">
                 <button type="button" data-toggle="dropdown" class="btn btn-default dropdown-toggle">
-                    Co-phylogeny
+                    Left Tree
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
@@ -247,13 +257,9 @@ function setup_event_handlers()
 		</div>
       <div class="col-md-5">
          <div class="btn-group" id="right_button_group">
-            <button type="button" id="right_heatmap" class="btn btn-default">Heatmap</button>
-            <button type="button" id="right_plots"   class="btn btn-default">Plots</button>
-            <button type="button" id="right_fasta"   class="btn btn-default">Fasta</button>
-            <button type="button" id="right_map"     class="btn btn-default">Map</button>
             <div class="btn-group">
                 <button type="button" data-toggle="dropdown" class="btn btn-default dropdown-toggle">
-                    Co-phylogeny
+                    Right Tree
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
